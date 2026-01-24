@@ -1,0 +1,79 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+
+// Twilio will be imported dynamically when installed
+// import * as twilio from 'twilio';
+
+@Injectable()
+export class TwilioService {
+  private client: any;
+  private fromNumber: string;
+
+  constructor(private configService: ConfigService) {
+    const accountSid = this.configService.get('TWILIO_ACCOUNT_SID');
+    const authToken = this.configService.get('TWILIO_AUTH_TOKEN');
+    this.fromNumber = this.configService.get('TWILIO_PHONE_NUMBER') || '';
+
+    if (accountSid && authToken) {
+      try {
+        // Dynamically import twilio if available
+        const twilioModule = require('twilio');
+        this.client = twilioModule(accountSid, authToken);
+      } catch (error) {
+        console.warn('Twilio module not installed. Phone verification will not work.');
+      }
+    }
+  }
+
+  async sendSMS(to: string, message: string): Promise<void> {
+    if (!this.client) {
+      console.warn('Twilio not configured. SMS not sent.');
+      return;
+    }
+
+    try {
+      await this.client.messages.create({
+        body: message,
+        from: this.fromNumber,
+        to: to,
+      });
+      console.log(`SMS sent to ${to}`);
+    } catch (error) {
+      console.error('Failed to send SMS:', error);
+      throw new Error('Failed to send SMS');
+    }
+  }
+
+  async sendOtpSMS(phoneNumber: string, otp: string): Promise<void> {
+    const message = `Your MaziCare verification code is: ${otp}. This code will expire in 10 minutes. Do not share this code with anyone.`;
+    await this.sendSMS(phoneNumber, message);
+  }
+
+  async sendPasswordResetOtpSMS(phoneNumber: string, otp: string): Promise<void> {
+    const message = `Your MaziCare password reset code is: ${otp}. This code will expire in 10 minutes. If you didn't request this, please ignore.`;
+    await this.sendSMS(phoneNumber, message);
+  }
+
+  formatPhoneNumber(phoneNumber: string): string {
+    // Remove all non-digit characters
+    let cleaned = phoneNumber.replace(/\D/g, '');
+
+    // If it doesn't start with country code, assume it's a US number
+    if (!cleaned.startsWith('1') && cleaned.length === 10) {
+      cleaned = '1' + cleaned;
+    }
+
+    // Add + prefix for international format
+    if (!cleaned.startsWith('+')) {
+      cleaned = '+' + cleaned;
+    }
+
+    return cleaned;
+  }
+
+  validatePhoneNumber(phoneNumber: string): boolean {
+    // Basic validation: should have at least 10 digits
+    const cleaned = phoneNumber.replace(/\D/g, '');
+    return cleaned.length >= 10 && cleaned.length <= 15;
+  }
+}

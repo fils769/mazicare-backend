@@ -1,0 +1,101 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    PROFILE PICTURE UPDATE - QUICK REFERENCE                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ ENDPOINT                                                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  PUT /user/profile-picture
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ AUTHENTICATION                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Authorization: Bearer YOUR_JWT_TOKEN
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ REQUEST BODY (multipart/form-data)                                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  profilePicture: [Image File]
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ CURL EXAMPLE                                                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  curl -X PUT http://localhost:3000/user/profile-picture \
+    -H "Authorization: Bearer YOUR_TOKEN" \
+    -F "profilePicture=@image.jpg"
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ JAVASCRIPT EXAMPLE                                                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  const formData = new FormData();
+  formData.append('profilePicture', file);
+
+  const response = await fetch('http://localhost:3000/user/profile-picture', {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: formData
+  });
+
+  const data = await response.json();
+  console.log(data.profile.profilePicture); // New URL
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SUCCESS RESPONSE (200)                                                       │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  {
+    "id": "user_id",
+    "email": "user@example.com",
+    "role": "CAREGIVER" | "FAMILY",
+    "profile": {
+      "profilePicture": "https://uploadthing.com/f/new-image.jpg",
+      ...
+    }
+  }
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ ERROR RESPONSES                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  400: Profile picture file is required
+  401: Unauthorized (invalid/missing token)
+  404: User not found / User profile not found
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ TESTING                                                                      │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  1. Open test-profile-picture.html in browser
+  2. Enter JWT token
+  3. Select image
+  4. Click "Update Profile Picture"
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SUPPORTED USERS                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  ✓ CAREGIVER (updates caregivers.profilePicture)
+  ✓ FAMILY (updates families.profilePicture)
+  ✗ ADMIN (not supported - no profile table)
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ FILES MODIFIED                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  src/user/user.controller.ts  → Added endpoint
+  src/user/user.service.ts      → Added updateProfilePicture method
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ STATUS                                                                       │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  ✅ IMPLEMENTED AND READY TO USE
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           END OF QUICK REFERENCE                             ║
+╚══════════════════════════════════════════════════════════════════════════════╝

@@ -1,0 +1,125 @@
+CAREGIVER DOCUMENT UPLOAD FEATURE
+==================================
+
+OVERVIEW:
+---------
+Caregivers can now upload multiple documents during onboarding:
+1. Profile Picture (picture of themselves)
+2. ID/Passport Photo
+3. Recommendation Letter (from friend or family)
+4. Certificates (multiple files supported)
+
+All documents are OPTIONAL but encouraged for better verification and trust.
+
+DATABASE SCHEMA CHANGES:
+------------------------
+Added to Caregiver model:
+- idPassportPhoto: String? (optional)
+- recommendationLetter: String? (optional)
+- certificates: String[] (array of URLs, optional)
+
+ENDPOINTS:
+----------
+
+1. Upload Profile Picture
+   POST /caregiver/details
+   Content-Type: multipart/form-data
+   Body: { profilePicture: File, ...other details }
+   Headers: Authorization: Bearer <token>
+
+2. Upload ID/Passport Photo
+   POST /caregiver/documents/id-passport
+   Content-Type: multipart/form-data
+   Body: { idPassport: File }
+   Headers: Authorization: Bearer <token>
+   Response: { idPassportPhoto: "url" }
+
+3. Upload Recommendation Letter
+   POST /caregiver/documents/recommendation
+   Content-Type: multipart/form-data
+   Body: { recommendation: File }
+   Headers: Authorization: Bearer <token>
+   Response: { recommendationLetter: "url" }
+
+4. Upload Certificate (can be called multiple times)
+   POST /caregiver/documents/certificates
+   Content-Type: multipart/form-data
+   Body: { certificate: File }
+   Headers: Authorization: Bearer <token>
+   Response: { certificates: ["url1", "url2", ...] }
+
+5. Upload General Document (legacy endpoint)
+   POST /caregiver/documents
+   Content-Type: multipart/form-data
+   Body: { document: File }
+   Headers: Authorization: Bearer <token>
+   Response: { documentUrl: "url" }
+
+ONBOARDING STATUS:
+------------------
+GET /caregiver/onboarding-status now returns:
+{
+  hasDetails: boolean,
+  hasRegionSelection: boolean,
+  hasDocument: boolean,
+  hasIdPassport: boolean,
+  hasRecommendation: boolean,
+  hasCertificates: boolean,
+  hasCareProgram: boolean,
+  isComplete: boolean,
+  caregiver: {...}
+}
+
+PROFILE RESPONSE:
+-----------------
+GET /caregiver/profile now includes:
+{
+  ...existing fields,
+  documents: {
+    profilePicture: "url",
+    idPassportPhoto: "url",
+    recommendationLetter: "url",
+    certificates: ["url1", "url2"],
+    documentUrl: "url"
+  }
+}
+
+FRONTEND IMPLEMENTATION:
+------------------------
+1. Create file upload inputs for each document type
+2. Use FormData to send files to respective endpoints
+3. Show upload progress and success/error messages
+4. Display uploaded documents with preview/download options
+5. Allow multiple certificate uploads (call endpoint multiple times)
+
+EXAMPLE FRONTEND CODE:
+----------------------
+// Upload ID/Passport
+const formData = new FormData();
+formData.append('idPassport', file);
+
+const response = await axios.post('/caregiver/documents/id-passport', formData, {
+  headers: {
+    'Content-Type': 'multipart/form-data',
+    'Authorization': `Bearer ${token}`
+  }
+});
+
+// Upload Certificate (can be called multiple times)
+const certFormData = new FormData();
+certFormData.append('certificate', certFile);
+
+const certResponse = await axios.post('/caregiver/documents/certificates', certFormData, {
+  headers: {
+    'Content-Type': 'multipart/form-data',
+    'Authorization': `Bearer ${token}`
+  }
+});
+
+NOTES:
+------
+- All documents are stored using UploadThing service
+- Files are uploaded to cloud storage and URLs are saved in database
+- Certificates array allows multiple uploads (each call appends to array)
+- Documents are optional but recommended for better trust and verification
+- All endpoints require JWT authentication

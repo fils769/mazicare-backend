@@ -1,0 +1,192 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║          ERROR: "User profile not found" - SOLUTION GUIDE                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+ERROR MESSAGE:
+  {
+    "message": "User profile not found",
+    "error": "Not Found",
+    "statusCode": 404
+  }
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ WHAT THIS ERROR MEANS                                                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+This error occurs when you try to update a profile picture for a user who 
+hasn't completed their onboarding process yet.
+
+The system now provides MORE SPECIFIC error messages:
+
+1. "Caregiver profile not found. Please complete onboarding first."
+   → User is a CAREGIVER but hasn't completed caregiver onboarding
+
+2. "Family profile not found. Please complete onboarding first."
+   → User is a FAMILY but hasn't completed family onboarding
+
+3. "Profile picture updates are not supported for admin users"
+   → User is an ADMIN (admins don't have profile pictures)
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ WHY THIS HAPPENS                                                            ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+When a user registers, they create a User account, but they need to complete
+onboarding to create their Caregiver or Family profile. Profile pictures are
+stored in the Caregiver/Family tables, not the User table.
+
+USER FLOW:
+  1. Register → Creates User record (email, password, role)
+  2. Onboarding → Creates Caregiver/Family record (profile details)
+  3. Update Picture → Can now update profile picture ✓
+
+If you skip step 2, you can't do step 3!
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ SOLUTION: COMPLETE ONBOARDING FIRST                                         ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+FOR CAREGIVERS:
+  Complete onboarding by calling:
+    POST /caregiver/details
+  
+  With body:
+    {
+      "firstName": "John",
+      "lastName": "Doe",
+      "dateOfBirth": "1990-01-01",
+      "gender": "MALE",
+      "bio": "Experienced caregiver...",
+      "email": "john@example.com",
+      "phone": "+1234567890"
+    }
+  
+  You can also include profilePicture in this request!
+
+FOR FAMILIES:
+  Complete onboarding by calling:
+    POST /family/onboarding
+  
+  With body:
+    {
+      "familyName": "Smith Family",
+      "careFor": "elderly",
+      "ageGroup": "65+",
+      "region": "North",
+      "language": "English",
+      "careTypes": ["medical", "companionship"]
+    }
+  
+  You can also include profilePicture in this request!
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ AFTER ONBOARDING                                                            ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Once onboarding is complete, you can update your profile picture anytime:
+
+  PUT /user/profile-picture
+  Body: profilePicture (file)
+
+This will work! ✓
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ HOW TO CHECK IF ONBOARDING IS COMPLETE                                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Call: GET /user/profile
+
+Response will include:
+  {
+    "profile": {
+      "onboardingComplete": true/false,
+      // ... other fields
+    }
+  }
+
+If onboardingComplete is false, you need to complete onboarding first.
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ ALTERNATIVE: UPLOAD DURING ONBOARDING                                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Instead of uploading the profile picture separately, you can include it
+during onboarding:
+
+CAREGIVER ONBOARDING WITH PICTURE:
+  POST /caregiver/details
+  Content-Type: multipart/form-data
+  
+  Body:
+    firstName: "John"
+    lastName: "Doe"
+    dateOfBirth: "1990-01-01"
+    gender: "MALE"
+    profilePicture: [file]  ← Include picture here!
+
+FAMILY ONBOARDING WITH PICTURE:
+  POST /family/onboarding
+  Content-Type: multipart/form-data
+  
+  Body:
+    familyName: "Smith Family"
+    careFor: "elderly"
+    ageGroup: "65+"
+    region: "North"
+    language: "English"
+    careTypes: ["medical"]
+    profilePicture: [file]  ← Include picture here!
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ TESTING CHECKLIST                                                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Before trying to update profile picture:
+
+□ User is registered (has User account)
+□ User has completed onboarding (has Caregiver/Family profile)
+□ User is not an ADMIN
+□ JWT token is valid
+□ Server has been restarted with latest code
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ IMPROVED ERROR MESSAGES (AFTER SERVER RESTART)                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+After restarting the server with the updated code, you'll get clearer errors:
+
+BEFORE (Generic):
+  "User profile not found"
+
+AFTER (Specific):
+  "Caregiver profile not found. Please complete onboarding first."
+  or
+  "Family profile not found. Please complete onboarding first."
+  or
+  "Profile picture updates are not supported for admin users"
+
+This makes it much easier to understand what's wrong!
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ NEXT STEPS                                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+1. Restart the server to get improved error messages
+2. Check if the user has completed onboarding (GET /user/profile)
+3. If not, complete onboarding first
+4. Then try updating the profile picture again
+5. It will work! ✓
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ SUMMARY                                                                     ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+The error "User profile not found" means the user hasn't completed onboarding.
+
+SOLUTION: Complete onboarding first, then update the profile picture.
+
+OR: Include the profile picture during onboarding to do both at once.
+
+The endpoint is working correctly - it just requires onboarding to be complete!
+
+╔══════════════════════════════════════════════════════════════════════════════╗

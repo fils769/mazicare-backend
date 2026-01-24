@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaziCare Deals - Test Frontend</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .filters select, .filters input {
+            padding: 10px;
+            margin-right: 10px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .filters button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .filters button:hover {
+            background: #764ba2;
+        }
+
+        .stats {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.5em;
+            padding: 50px;
+        }
+
+        .error {
+            background: #ff4444;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .deals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .deal-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .deal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.2);
+        }
+
+        .deal-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+
+        .deal-content {
+            padding: 15px;
+        }
+
+        .deal-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .deal-title:hover {
+            color: #667eea;
+        }
+
+        .deal-category {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .deal-description {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .deal-price-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .deal-price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .deal-discount {
+            background: #ff4444;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .deal-region {
+            color: #999;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .pagination button {
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 MaziCare Deals</h1>
+
+        <!-- Filters -->
+        <div class="filters">
+            <select id="categoryFilter">
+                <option value="">All Categories</option>
+            </select>
+            <input type="number" id="limitInput" placeholder="Limit" value="20" min="1" max="100">
+            <button onclick="loadDeals()">Apply Filters</button>
+            <button onclick="resetFilters()">Reset</button>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats" id="stats">
+            <strong>Loading...</strong>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading" id="loading" style="display: none;">
+            Loading deals...
+        </div>
+
+        <!-- Error State -->
+        <div class="error" id="error" style="display: none;"></div>
+
+        <!-- Deals Grid -->
+        <div class="deals-grid" id="dealsGrid"></div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <button id="prevBtn" onclick="previousPage()">← Previous</button>
+            <span id="pageInfo" style="color: white; font-weight: bold; padding: 10px;"></span>
+            <button id="nextBtn" onclick="nextPage()">Next →</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/deals';
+        let currentOffset = 0;
+        let currentLimit = 20;
+        let totalDeals = 0;
+        let allCategories = new Set();
+
+        // Load deals on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDeals();
+        });
+
+        async function loadDeals() {
+            const category = document.getElementById('categoryFilter').value;
+            const limit = parseInt(document.getElementById('limitInput').value) || 20;
+            currentLimit = limit;
+
+            // Build query params
+            const params = new URLSearchParams();
+            if (category) params.append('category', category);
+            params.append('limit', limit);
+            params.append('offset', currentOffset);
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('dealsGrid').innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_URL}?${params.toString()}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                totalDeals = data.total;
+
+                // Update stats
+                document.getElementById('stats').innerHTML = `
+                    <strong>Total Deals:</strong> ${data.total} | 
+                    <strong>Showing:</strong> ${data.deals.length} deals
+                `;
+
+                // Collect categories
+                data.deals.forEach(deal => {
+                    if (deal.category) allCategories.add(deal.category);
+                });
+                updateCategoryFilter();
+
+                // Display deals
+                displayDeals(data.deals);
+
+                // Update pagination
+                updatePagination();
+
+            } catch (error) {
+                console.error('Error loading deals:', error);
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = `Error: ${error.message}`;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function displayDeals(deals) {
+            const grid = document.getElementById('dealsGrid');
+            grid.innerHTML = '';
+
+            if (deals.length === 0) {
+                grid.innerHTML = '<p style="color: white; text-align: center; grid-column: 1/-1;">No deals found</p>';
+                return;
+            }
+
+            deals.forEach(deal => {
+                const card = document.createElement('div');
+                card.className = 'deal-card';
+                
+                // Make the card clickable if redirectUrl exists
+                if (deal.redirectUrl) {
+                    card.style.cursor = 'pointer';
+                    card.onclick = () => window.open(deal.redirectUrl, '_blank');
+                }
+                
+                card.innerHTML = `
+                    <img src="${deal.imageUrl || 'https://via.placeholder.com/280x200?text=No+Image'}" 
+                         alt="${deal.title}" 
+                         class="deal-image"
+                         onerror="this.src='https://via.placeholder.com/280x200?text=No+Image'">
+                    <div class="deal-content">
+                        <div class="deal-title" title="${deal.title}">${deal.title}</div>
+                        ${deal.category ? `<span class="deal-category">${deal.category}</span>` : ''}
+                        ${deal.description ? `<div class="deal-description">${deal.description}</div>` : ''}
+                        <div class="deal-price-section">
+                            <div class="deal-price">€${deal.price ? deal.price.toFixed(2) : 'N/A'}</div>
+                            ${deal.discountPercent ? `<div class="deal-discount">-${deal.discountPercent}%</div>` : ''}
+                        </div>
+                        ${deal.region ? `<div class="deal-region">📍 ${deal.region}</div>` : ''}
+                        ${deal.redirectUrl ? `<div style="margin-top: 10px; font-size: 12px; color: #667eea;">🔗 Click to view product</div>` : ''}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function updateCategoryFilter() {
+            const select = document.getElementById('categoryFilter');
+            const currentValue = select.value;
+            
+            // Keep "All Categories" option
+            select.innerHTML = '<option value="">All Categories</option>';
+            
+            // Add categories
+            Array.from(allCategories).sort().forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                select.appendChild(option);
+            });
+
+            // Restore selected value
+            select.value = currentValue;
+        }
+
+        function updatePagination() {
+            const pageInfo = document.getElementById('pageInfo');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+
+            const currentPage = Math.floor(currentOffset / currentLimit) + 1;
+            const totalPages = Math.ceil(totalDeals / currentLimit);
+
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+            prevBtn.disabled = currentOffset === 0;
+            nextBtn.disabled = currentOffset + currentLimit >= totalDeals;
+        }
+
+        function previousPage() {
+            if (currentOffset > 0) {
+                currentOffset -= currentLimit;
+                loadDeals();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function nextPage() {
+            if (currentOffset + currentLimit < totalDeals) {
+                currentOffset += currentLimit;
+                loadDeals();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('limitInput').value = '20';
+            currentOffset = 0;
+            loadDeals();
+        }
+    </script>
+</body>
+</html>

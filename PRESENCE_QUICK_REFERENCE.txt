@@ -1,0 +1,147 @@
+================================================================================
+REAL-TIME PRESENCE - QUICK REFERENCE
+================================================================================
+
+WEBSOCKET CONNECTION
+--------------------
+const socket = io('http://localhost:3000/ws/messages', {
+  auth: { token: 'your-jwt-token' }
+});
+
+AVAILABLE EVENTS
+----------------
+
+1. CHECK USER STATUS
+   socket.emit('check-user-status', { userId: 'user-123' }, (response) => {
+     console.log(response.data.online); // true/false
+   });
+
+2. CHECK MULTIPLE USERS
+   socket.emit('check-users-status', { 
+     userIds: ['user-1', 'user-2'] 
+   }, (response) => {
+     console.log(response.data.statuses);
+   });
+
+3. GET ALL ONLINE USERS
+   socket.emit('get-online-users', {}, (response) => {
+     console.log(response.data.users);
+     console.log(response.data.count);
+   });
+
+4. SEND HEARTBEAT
+   socket.emit('heartbeat', {}, (response) => {
+     console.log('Heartbeat sent');
+   });
+
+LISTEN FOR EVENTS
+-----------------
+
+1. USER ONLINE
+   socket.on('user-online', (data) => {
+     console.log(`${data.userId} is online`);
+   });
+
+2. USER OFFLINE
+   socket.on('user-offline', (data) => {
+     console.log(`${data.userId} is offline`);
+   });
+
+3. CONNECTION STATUS
+   socket.on('connect', () => console.log('Connected'));
+   socket.on('disconnect', () => console.log('Disconnected'));
+
+REACT HOOK EXAMPLE
+------------------
+function useUserPresence(userId) {
+  const [online, setOnline] = useState(false);
+
+  useEffect(() => {
+    socket.emit('check-user-status', { userId }, (res) => {
+      setOnline(res.data.online);
+    });
+
+    const handleOnline = (data) => {
+      if (data.userId === userId) setOnline(true);
+    };
+    const handleOffline = (data) => {
+      if (data.userId === userId) setOnline(false);
+    };
+
+    socket.on('user-online', handleOnline);
+    socket.on('user-offline', handleOffline);
+
+    return () => {
+      socket.off('user-online', handleOnline);
+      socket.off('user-offline', handleOffline);
+    };
+  }, [userId]);
+
+  return online;
+}
+
+USAGE IN COMPONENT
+------------------
+function UserCard({ userId, name }) {
+  const online = useUserPresence(userId);
+  
+  return (
+    <div>
+      <h3>{name}</h3>
+      <span>{online ? '🟢 Online' : '⚫ Offline'}</span>
+    </div>
+  );
+}
+
+HEARTBEAT SETUP
+---------------
+// Send heartbeat every 30 seconds
+setInterval(() => {
+  if (socket.connected) {
+    socket.emit('heartbeat');
+  }
+}, 30000);
+
+BEST PRACTICES
+--------------
+✅ Always clean up event listeners
+✅ Use batch checks for multiple users
+✅ Implement heartbeat for active connections
+✅ Handle reconnection events
+✅ Show loading states
+✅ Debounce rapid updates
+
+RESPONSE FORMATS
+----------------
+
+User Status:
+{
+  event: 'user-status',
+  data: {
+    userId: 'user-123',
+    online: true,
+    lastActive: '2026-01-04T00:00:00.000Z',
+    connectedAt: '2026-01-03T23:55:00.000Z',
+    timestamp: '2026-01-04T00:00:00.000Z'
+  }
+}
+
+Online Users:
+{
+  event: 'online-users',
+  data: {
+    users: [
+      {
+        userId: 'user-1',
+        email: 'user@example.com',
+        role: 'family',
+        connectedAt: '2026-01-03T23:55:00.000Z',
+        lastActive: '2026-01-04T00:00:00.000Z'
+      }
+    ],
+    count: 1,
+    timestamp: '2026-01-04T00:00:00.000Z'
+  }
+}
+
+================================================================================

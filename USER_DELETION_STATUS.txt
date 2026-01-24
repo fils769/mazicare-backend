@@ -1,0 +1,5 @@
+Users deleted successfully:
+1. alliancedamour88@gmail.com
+2. bienvenuealliance@gmail.com
+
+All related data (Caregiver/Family profiles, Messages, Notifications, Activity Logs, etc.) has been removed from the database.

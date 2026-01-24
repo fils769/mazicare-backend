@@ -1,0 +1,176 @@
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  MinLength,
+  IsBoolean,
+  Matches,
+} from 'class-validator';
+
+enum UserRole {
+  ADMIN = 'ADMIN',
+  CAREGIVER = 'CAREGIVER',
+  FAMILY = 'FAMILY',
+}
+
+enum VerificationMethod {
+  EMAIL = 'EMAIL',
+  PHONE = 'PHONE',
+}
+
+export class SignupWithPhoneDto {
+  @IsString()
+  @Matches(/^\+?[1-9]\d{1,14}$/, {
+    message: 'Phone number must be in valid international format',
+  })
+  phoneNumber: string;
+
+  @IsEnum(UserRole)
+  role: UserRole;
+}
+
+export class VerifyPhoneOtpDto {
+  @IsString()
+  phoneNumber: string;
+
+  @IsString()
+  otp: string;
+
+  @IsOptional()
+  @IsString()
+  type?: string;
+}
+
+export class LoginWithPhoneDto {
+  @IsString()
+  phoneNumber: string;
+
+  @IsString()
+  password: string;
+
+  @IsOptional()
+  @IsBoolean()
+  rememberMe?: boolean;
+}
+
+export class CreatePasswordWithPhoneDto {
+  @IsString()
+  phoneNumber: string;
+
+  @IsString()
+  @MinLength(6)
+  password: string;
+}
+
+export class ForgotPasswordWithPhoneDto {
+  @IsString()
+  phoneNumber: string;
+}
+
+export class ResetPasswordWithPhoneDto {
+  @IsString()
+  phoneNumber: string;
+
+  @IsString()
+  @MinLength(6)
+  password: string;
+}
+
+export class UnifiedSignupDto {
+  @IsOptional()
+  @IsString()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @IsEnum(UserRole)
+  role: UserRole;
+
+  @IsEnum(VerificationMethod)
+  verificationMethod: VerificationMethod;
+}
+
+export class UnifiedVerifyOtpDto {
+  @IsOptional()
+  @IsString()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @IsString()
+  otp: string;
+
+  @IsEnum(VerificationMethod)
+  verificationMethod: VerificationMethod;
+}
+
+export class UnifiedLoginDto {
+  @IsOptional()
+  @IsString()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @IsString()
+  password: string;
+
+  @IsOptional()
+  @IsBoolean()
+  rememberMe?: boolean;
+
+  @IsEnum(VerificationMethod)
+  verificationMethod: VerificationMethod;
+}
+
+export class UnifiedForgotPasswordDto {
+  @IsOptional()
+  @IsString()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @IsEnum(VerificationMethod)
+  verificationMethod: VerificationMethod;
+}
+
+export class UnifiedCreatePasswordDto {
+  @IsOptional()
+  @IsString()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @IsString()
+  @MinLength(6)
+  password: string;
+
+  @IsEnum(VerificationMethod)
+  verificationMethod: VerificationMethod;
+}
+
+export class UnifiedResetPasswordDto {
+  @IsOptional()
+  @IsString()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @IsString()
+  @MinLength(6)
+  password: string;
+
+  @IsEnum(VerificationMethod)
+  verificationMethod: VerificationMethod;
+}

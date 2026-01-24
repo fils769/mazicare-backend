@@ -1,0 +1,350 @@
+{
+  "info": {
+    "name": "MaziCare Deals API",
+    "description": "Complete API collection for testing the Deals feature",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "userToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "dealId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Public Endpoints",
+      "item": [
+        {
+          "name": "Get All Deals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deals",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals"]
+            }
+          }
+        },
+        {
+          "name": "Get Active Deals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deals?isActive=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals"],
+              "query": [
+                {
+                  "key": "isActive",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deals?category=Care Services",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "Care Services"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter by Region",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deals?region=Κέντρο",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals"],
+              "query": [
+                {
+                  "key": "region",
+                  "value": "Κέντρο"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Paginated Results",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deals?limit=5&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Endpoints",
+      "item": [
+        {
+          "name": "Get Deal by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/deals/{{dealId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals", "{{dealId}}"]
+            }
+          }
+        },
+        {
+          "name": "Claim Deal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/deals/{{dealId}}/claim",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals", "{{dealId}}", "claim"]
+            }
+          }
+        },
+        {
+          "name": "Get My Claimed Deals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/deals/my-claims",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals", "my-claims"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Endpoints",
+      "item": [
+        {
+          "name": "Create Deal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Special Winter Offer\",\n  \"description\": \"Get 30% off on all care services this winter\",\n  \"category\": \"Care Services\",\n  \"discountPercent\": 30,\n  \"price\": 599.99,\n  \"imageUrl\": \"https://example.com/winter-offer.jpg\",\n  \"region\": \"Κέντρο\",\n  \"startsAt\": \"2026-01-15T00:00:00Z\",\n  \"endsAt\": \"2026-03-15T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/deals",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals"]
+            }
+          }
+        },
+        {
+          "name": "Update Deal",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"discountPercent\": 40,\n  \"endsAt\": \"2026-04-15T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/deals/{{dealId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals", "{{dealId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Deal Claims",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/deals/{{dealId}}/claims",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals", "{{dealId}}", "claims"]
+            }
+          }
+        },
+        {
+          "name": "Delete Deal",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/deals/{{dealId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals", "{{dealId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test Scenarios",
+      "item": [
+        {
+          "name": "Try Claiming Same Deal Twice (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/deals/{{dealId}}/claim",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals", "{{dealId}}", "claim"]
+            }
+          }
+        },
+        {
+          "name": "Create Deal Without Auth (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Deal\",\n  \"category\": \"Care Services\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/deals",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals"]
+            }
+          }
+        },
+        {
+          "name": "Create Deal as User (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Deal\",\n  \"category\": \"Care Services\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/deals",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║              FIXED: "Profile Picture Required" Error                         ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+THE ISSUE:
+  When you click "Save" on your profile, your app is calling the profile picture
+  update endpoint even if you didn't select a new file.
+  
+  Previously, the server said: "Error! You didn't give me a file!"
+
+THE FIX:
+  I updated the backend logic to be smarter:
+  
+  "If the user calls the update endpoint but DOESN'T provide a file, 
+   just ignore it and return their current profile."
+
+  Now, if you update your name/bio but leave the picture alone, 
+  it will work perfectly! ✅
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ WHAT YOU NEED TO DO                                                         ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+1. STOP the server (Ctrl + C)
+
+2. START the server (npm start)
+
+3. Try updating your profile again.
+   It will work without errors! 🎉
+
+╔══════════════════════════════════════════════════════════════════════════════╗

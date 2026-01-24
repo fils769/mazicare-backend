@@ -1,0 +1,92 @@
+[
+  {
+    "title": "Biotech USA 100% Creatine Monohydrate Unflavoured 300gr",
+    "category": "Κρεατίνες",
+    "description": "Είδος: Monohydrate",
+    "price": 18.9,
+    "discountPercent": 20.0,
+    "imageUrl": "https://d.scdn.gr/images/sku_main_images/034435/34435342/large_20250910125947_biotech_usa_100_creatine_monohydrate_unflavoured_300gr.jpeg",
+    "region": "σε 4 καταστήματα"
+  },
+  {
+    "title": "Ellesse Lombardy Μπουφάν Puffer Anthracite",
+    "category": "Ανδρικά Μπουφάν",
+    "description": "",
+    "price": 57.82,
+    "discountPercent": 15.0,
+    "imageUrl": "https://a.scdn.gr/images/sku_main_images/048831/48831859/large_20250914052658_ellesse_lombardy_cheimoniatiko_mpoufan_puffer_anthracite_shs01115_001.jpeg",
+    "region": ""
+  },
+  {
+    "title": "Nike Sportswear Jogger Παντελόνι Γκρι",
+    "category": "Ανδρικές Φόρμες",
+    "description": "",
+    "price": 38.49,
+    "discountPercent": 12.0,
+    "imageUrl": "https://a.scdn.gr/images/sku_main_images/019550/19550881/large_20250918063426_nike_sportswear_panteloni_formas_me_lasticho_gri_bv2671_063.jpeg",
+    "region": ""
+  },
+  {
+    "title": "Nike Sportswear Club Jogger Παντελόνι Μαύρο",
+    "category": "Ανδρικές Φόρμες",
+    "description": "",
+    "price": 38.49,
+    "discountPercent": 12.0,
+    "imageUrl": "https://b.scdn.gr/images/sku_main_images/019597/19597997/large_20250918063427_nike_sportswear_club_panteloni_formas_me_lasticho_mayro_bv2671_010.jpeg",
+    "region": ""
+  },
+  {
+    "title": "New Balance 530 Chunky Sneakers White / Silver",
+    "category": "Sneakers",
+    "description": "",
+    "price": 83.96,
+    "discountPercent": 10.0,
+    "imageUrl": "https://c.scdn.gr/images/sku_main_images/049389/49389793/large_20250918173141_new_balance_530_chunky_sneakers_white_silver_mr530ema.jpeg",
+    "region": ""
+  },
+  {
+    "title": "New Balance 530 Sneakers Ασπρο",
+    "category": "Sneakers",
+    "description": "",
+    "price": 83.96,
+    "discountPercent": 12.0,
+    "imageUrl": "https://d.scdn.gr/images/sku_main_images/059805/59805011/large_20250918185407_new_balance_530_gynaikeia_sneakers_aspro_mr530asm.jpeg",
+    "region": "σε 2 καταστήματα"
+  },
+  {
+    "title": "Biotech USA 100% Creatine Monohydrate Unflavoured 500gr",
+    "category": "Κρεατίνες",
+    "description": "Είδος: Monohydrate",
+    "price": 31.0,
+    "discountPercent": 20.0,
+    "imageUrl": "https://b.scdn.gr/images/sku_main_images/004254/4254032/large_20210920130713_biotech_usa_100_creatine_monohydrate_500gr.jpeg",
+    "region": "σε 2 καταστήματα"
+  },
+  {
+    "title": "Andowl Q-D1030 Φορητός Εκκινητής Μπαταρίας 15000mAh",
+    "category": "Εκκινητές & Φορτιστές Μπαταρίας Αυτοκινήτου",
+    "description": "Power Bank, USB, Φακός",
+    "price": 32.99,
+    "discountPercent": 15.0,
+    "imageUrl": "https://d.scdn.gr/images/sku_main_images/039600/39600961/large_20230822091931_andowl_foritos_ekkinitis_mpatarias_aytokinitou_me_power_bank_q_d1030.jpeg",
+    "region": ""
+  },
+  {
+    "title": "Nike Shox TL Chunky Sneakers Μαύρα",
+    "category": "Sneakers",
+    "description": "",
+    "price": 169.9,
+    "discountPercent": 10.0,
+    "imageUrl": "https://b.scdn.gr/images/sku_main_images/019739/19739488/large_20250918190120_nike_shox_tl_andrika_chunky_sneakers_mayra_av3595_002.jpeg",
+    "region": ""
+  },
+  {
+    "title": "Air Optix Plus Hydraglyde Μηνιαίοι 6τμχ",
+    "category": "Φακοί Επαφής",
+    "description": "Μυωπίας-Υπερμετρωπίας, Υλικό: Σιλικόνη Υδρογέλης",
+    "price": 32.0,
+    "discountPercent": 11.0,
+    "imageUrl": "https://b.scdn.gr/images/sku_main_images/009125/9125616/large_20200317131902_air_optix_plus_hydraglyde_myopias_miniaioi_6pack.jpeg",
+    "region": ""
+  }
+]

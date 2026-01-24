@@ -1,0 +1,674 @@
+================================================================================
+COPY-PASTE READY COMPONENTS FOR FRONTEND
+================================================================================
+
+This file contains ready-to-use components that you can copy directly into
+your React/TypeScript frontend application.
+
+================================================================================
+1. SOCKET CONNECTION SETUP
+================================================================================
+
+File: src/lib/socket.ts
+-----------------------
+
+import { io, Socket } from 'socket.io-client';
+
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+class SocketService {
+  private socket: Socket | null = null;
+
+  connect(token: string) {
+    if (this.socket?.connected) {
+      return this.socket;
+    }
+
+    this.socket = io(`${SOCKET_URL}/ws/messages`, {
+      auth: { token },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+
+    this.socket.on('connect', () => {
+      console.log('✅ WebSocket connected');
+    });
+
+    this.socket.on('disconnect', () => {
+      console.log('❌ WebSocket disconnected');
+    });
+
+    this.socket.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+
+    // Start heartbeat
+    setInterval(() => {
+      if (this.socket?.connected) {
+        this.socket.emit('heartbeat');
+      }
+    }, 30000);
+
+    return this.socket;
+  }
+
+  disconnect() {
+    this.socket?.disconnect();
+    this.socket = null;
+  }
+
+  getSocket() {
+    return this.socket;
+  }
+}
+
+export const socketService = new SocketService();
+export const getSocket = () => socketService.getSocket();
+
+================================================================================
+2. REACT HOOK - useUserPresence
+================================================================================
+
+File: src/hooks/useUserPresence.ts
+-----------------------------------
+
+import { useEffect, useState } from 'react';
+import { getSocket } from '@/lib/socket';
+
+interface UserPresence {
+  userId: string;
+  online: boolean;
+  lastActive?: string;
+  connectedAt?: string;
+  loading: boolean;
+}
+
+export function useUserPresence(userId: string | undefined): UserPresence {
+  const [presence, setPresence] = useState<UserPresence>({
+    userId: userId || '',
+    online: false,
+    loading: true,
+  });
+
+  useEffect(() => {
+    if (!userId) {
+      setPresence(prev => ({ ...prev, loading: false }));
+      return;
+    }
+
+    const socket = getSocket();
+    if (!socket) {
+      setPresence(prev => ({ ...prev, loading: false }));
+      return;
+    }
+
+    // Check initial status
+    socket.emit('check-user-status', { userId }, (response: any) => {
+      setPresence({
+        userId,
+        online: response.data.online,
+        lastActive: response.data.lastActive,
+        connectedAt: response.data.connectedAt,
+        loading: false,
+      });
+    });
+
+    // Listen for status changes
+    const handleUserOnline = (data: any) => {
+      if (data.userId === userId) {
+        setPresence(prev => ({
+          ...prev,
+          online: true,
+          connectedAt: data.timestamp,
+        }));
+      }
+    };
+
+    const handleUserOffline = (data: any) => {
+      if (data.userId === userId) {
+        setPresence(prev => ({
+          ...prev,
+          online: false,
+        }));
+      }
+    };
+
+    socket.on('user-online', handleUserOnline);
+    socket.on('user-offline', handleUserOffline);
+
+    return () => {
+      socket.off('user-online', handleUserOnline);
+      socket.off('user-offline', handleUserOffline);
+    };
+  }, [userId]);
+
+  return presence;
+}
+
+================================================================================
+3. REACT HOOK - useOnlineUsers
+================================================================================
+
+File: src/hooks/useOnlineUsers.ts
+----------------------------------
+
+import { useEffect, useState } from 'react';
+import { getSocket } from '@/lib/socket';
+
+interface OnlineUser {
+  userId: string;
+  email?: string;
+  role?: string;
+  connectedAt?: string;
+  lastActive?: string;
+}
+
+export function useOnlineUsers() {
+  const [users, setUsers] = useState<OnlineUser[]>([]);
+  const [count, setCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const refreshOnlineUsers = () => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    socket.emit('get-online-users', {}, (response: any) => {
+      setUsers(response.data.users);
+      setCount(response.data.count);
+      setLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) {
+      setLoading(false);
+      return;
+    }
+
+    // Get initial list
+    refreshOnlineUsers();
+
+    // Update on presence changes
+    socket.on('user-online', refreshOnlineUsers);
+    socket.on('user-offline', refreshOnlineUsers);
+    socket.on('connect', refreshOnlineUsers);
+
+    return () => {
+      socket.off('user-online', refreshOnlineUsers);
+      socket.off('user-offline', refreshOnlineUsers);
+      socket.off('connect', refreshOnlineUsers);
+    };
+  }, []);
+
+  return { users, count, loading, refresh: refreshOnlineUsers };
+}
+
+================================================================================
+4. COMPONENT - OnlineIndicator
+================================================================================
+
+File: src/components/OnlineIndicator.tsx
+-----------------------------------------
+
+import React from 'react';
+import { useUserPresence } from '@/hooks/useUserPresence';
+
+interface OnlineIndicatorProps {
+  userId: string;
+  showText?: boolean;
+  showLastSeen?: boolean;
+  className?: string;
+}
+
+export function OnlineIndicator({ 
+  userId, 
+  showText = true,
+  showLastSeen = false,
+  className = ''
+}: OnlineIndicatorProps) {
+  const { online, lastActive, loading } = useUserPresence(userId);
+
+  if (loading) {
+    return (
+      <div className={`flex items-center gap-2 ${className}`}>
+        <div className="w-2 h-2 rounded-full bg-gray-300 animate-pulse" />
+        {showText && <span className="text-sm text-gray-400">...</span>}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex items-center gap-2 ${className}`}>
+      <div 
+        className={`w-2 h-2 rounded-full ${
+          online ? 'bg-green-500' : 'bg-gray-400'
+        }`}
+      />
+      {showText && (
+        <span className={`text-sm ${online ? 'text-green-600' : 'text-gray-500'}`}>
+          {online ? 'Online' : 'Offline'}
+        </span>
+      )}
+      {!online && showLastSeen && lastActive && (
+        <span className="text-xs text-gray-400">
+          Last seen {new Date(lastActive).toLocaleString()}
+        </span>
+      )}
+    </div>
+  );
+}
+
+================================================================================
+5. COMPONENT - OnlineStatusBadge
+================================================================================
+
+File: src/components/OnlineStatusBadge.tsx
+-------------------------------------------
+
+import React from 'react';
+import { useUserPresence } from '@/hooks/useUserPresence';
+
+interface OnlineStatusBadgeProps {
+  userId: string;
+  size?: 'sm' | 'md' | 'lg';
+  position?: 'top-right' | 'bottom-right' | 'top-left' | 'bottom-left';
+}
+
+export function OnlineStatusBadge({ 
+  userId, 
+  size = 'md',
+  position = 'bottom-right'
+}: OnlineStatusBadgeProps) {
+  const { online } = useUserPresence(userId);
+
+  const sizeClasses = {
+    sm: 'w-2 h-2',
+    md: 'w-3 h-3',
+    lg: 'w-4 h-4'
+  };
+
+  const positionClasses = {
+    'top-right': 'top-0 right-0',
+    'bottom-right': 'bottom-0 right-0',
+    'top-left': 'top-0 left-0',
+    'bottom-left': 'bottom-0 left-0'
+  };
+
+  return (
+    <span 
+      className={`
+        absolute ${positionClasses[position]} 
+        ${sizeClasses[size]} 
+        rounded-full 
+        border-2 border-white
+        ${online ? 'bg-green-500' : 'bg-gray-400'}
+      `}
+    />
+  );
+}
+
+// Usage example:
+// <div className="relative">
+//   <img src={avatar} className="w-12 h-12 rounded-full" />
+//   <OnlineStatusBadge userId={userId} />
+// </div>
+
+================================================================================
+6. COMPONENT - UserCard with Online Status
+================================================================================
+
+File: src/components/UserCard.tsx
+----------------------------------
+
+import React from 'react';
+import { useUserPresence } from '@/hooks/useUserPresence';
+import { OnlineStatusBadge } from './OnlineStatusBadge';
+
+interface UserCardProps {
+  userId: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  role?: string;
+  onClick?: () => void;
+}
+
+export function UserCard({ 
+  userId, 
+  name, 
+  email, 
+  avatar, 
+  role,
+  onClick 
+}: UserCardProps) {
+  const { online, lastActive } = useUserPresence(userId);
+
+  return (
+    <div 
+      onClick={onClick}
+      className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+    >
+      <div className="flex items-start gap-3">
+        {/* Avatar with online badge */}
+        <div className="relative flex-shrink-0">
+          <img 
+            src={avatar || '/default-avatar.png'} 
+            alt={name}
+            className="w-12 h-12 rounded-full object-cover"
+          />
+          <OnlineStatusBadge userId={userId} />
+        </div>
+        
+        {/* User info */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-gray-900 truncate">{name}</h3>
+          <p className="text-sm text-gray-600 truncate">{email}</p>
+          {role && (
+            <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+              {role}
+            </span>
+          )}
+          
+          {/* Online status */}
+          <div className="mt-2 text-xs">
+            {online ? (
+              <span className="text-green-600 font-medium">🟢 Online now</span>
+            ) : lastActive ? (
+              <span className="text-gray-500">
+                Last seen: {new Date(lastActive).toLocaleString()}
+              </span>
+            ) : (
+              <span className="text-gray-500">Offline</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+7. COMPONENT - OnlineUsersList
+================================================================================
+
+File: src/components/OnlineUsersList.tsx
+-----------------------------------------
+
+import React from 'react';
+import { useOnlineUsers } from '@/hooks/useOnlineUsers';
+
+export function OnlineUsersList() {
+  const { users, count, loading, refresh } = useOnlineUsers();
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-12 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow p-4">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-900">
+          Online Users ({count})
+        </h2>
+        <button 
+          onClick={refresh}
+          className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+        >
+          Refresh
+        </button>
+      </div>
+
+      {/* User list */}
+      {users.length === 0 ? (
+        <p className="text-gray-500 text-center py-8">No users online</p>
+      ) : (
+        <ul className="space-y-2">
+          {users.map(user => (
+            <li 
+              key={user.userId}
+              className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <span className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-gray-900 truncate">
+                  {user.email || user.userId}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {user.role}
+                </div>
+              </div>
+              <div className="text-xs text-gray-400">
+                {user.connectedAt && 
+                  new Date(user.connectedAt).toLocaleTimeString()
+                }
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+================================================================================
+8. COMPONENT - ChatSidebar with Online Status
+================================================================================
+
+File: src/components/ChatSidebar.tsx
+-------------------------------------
+
+import React from 'react';
+import { useUserPresence } from '@/hooks/useUserPresence';
+
+interface Conversation {
+  id: string;
+  otherUserId: string;
+  otherUserName: string;
+  otherUserAvatar?: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCount?: number;
+}
+
+interface ChatSidebarProps {
+  conversations: Conversation[];
+  selectedId?: string;
+  onSelectConversation: (id: string) => void;
+}
+
+export function ChatSidebar({ 
+  conversations, 
+  selectedId,
+  onSelectConversation 
+}: ChatSidebarProps) {
+  return (
+    <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className="p-4 border-b border-gray-200">
+        <h2 className="text-xl font-bold text-gray-900">Messages</h2>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto">
+        {conversations.map(conv => (
+          <ConversationItem
+            key={conv.id}
+            conversation={conv}
+            isSelected={conv.id === selectedId}
+            onClick={() => onSelectConversation(conv.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ConversationItem({ 
+  conversation, 
+  isSelected,
+  onClick 
+}: { 
+  conversation: Conversation; 
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const { online } = useUserPresence(conversation.otherUserId);
+
+  return (
+    <div 
+      onClick={onClick}
+      className={`
+        p-4 cursor-pointer border-b border-gray-100
+        hover:bg-gray-50 transition-colors
+        ${isSelected ? 'bg-blue-50' : ''}
+      `}
+    >
+      <div className="flex items-center gap-3">
+        {/* Avatar with online badge */}
+        <div className="relative flex-shrink-0">
+          <img 
+            src={conversation.otherUserAvatar || '/default-avatar.png'}
+            alt={conversation.otherUserName}
+            className="w-12 h-12 rounded-full object-cover"
+          />
+          {online && (
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+          )}
+        </div>
+        
+        {/* Conversation info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="font-semibold text-gray-900 truncate">
+              {conversation.otherUserName}
+            </h3>
+            <span className="text-xs text-gray-500">
+              {new Date(conversation.lastMessageTime).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-600 truncate">
+              {conversation.lastMessage}
+            </p>
+            {conversation.unreadCount && conversation.unreadCount > 0 && (
+              <span className="ml-2 px-2 py-0.5 text-xs font-bold bg-blue-600 text-white rounded-full">
+                {conversation.unreadCount}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+9. USAGE IN YOUR APP
+================================================================================
+
+File: src/app/layout.tsx or src/App.tsx
+----------------------------------------
+
+import { useEffect } from 'react';
+import { socketService } from '@/lib/socket';
+import { useAuth } from '@/contexts/AuthContext'; // Your auth context
+
+export function AppLayout({ children }) {
+  const { user, token } = useAuth();
+
+  useEffect(() => {
+    if (token) {
+      // Connect to WebSocket when user is authenticated
+      socketService.connect(token);
+    }
+
+    return () => {
+      // Disconnect when component unmounts
+      socketService.disconnect();
+    };
+  }, [token]);
+
+  return <>{children}</>;
+}
+
+================================================================================
+10. EXAMPLE PAGE - Online Users Dashboard
+================================================================================
+
+File: src/app/online-users/page.tsx
+------------------------------------
+
+import React from 'react';
+import { OnlineUsersList } from '@/components/OnlineUsersList';
+import { UserCard } from '@/components/UserCard';
+
+export default function OnlineUsersPage() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Online Users</h1>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Online users list */}
+        <div className="lg:col-span-1">
+          <OnlineUsersList />
+        </div>
+        
+        {/* Additional content */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-bold mb-4">User Activity</h2>
+            <p className="text-gray-600">
+              Monitor real-time user presence and activity.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+INSTALLATION INSTRUCTIONS
+================================================================================
+
+1. Install socket.io-client:
+   npm install socket.io-client
+
+2. Copy the files above into your project
+
+3. Update import paths to match your project structure
+
+4. Initialize socket connection in your app layout/root component
+
+5. Use the hooks and components anywhere in your app
+
+================================================================================
+THAT'S IT!
+================================================================================
+
+You now have a complete, production-ready real-time presence system.
+All components are styled with Tailwind CSS and ready to use.
+
+For more examples and documentation, see:
+- REALTIME_PRESENCE_FRONTEND_GUIDE.txt
+- PRESENCE_QUICK_REFERENCE.txt
+- test-presence.html
+
+================================================================================

@@ -1,0 +1,241 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║           GET /user/profile - RESPONSE DATA STRUCTURE                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+ENDPOINT: GET /user/profile
+AUTHENTICATION: Required (JWT Bearer Token)
+METHOD: GET
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ COMMON FIELDS (ALL USER TYPES)                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+All responses include these base fields from the User table:
+
+{
+  "id": "string",                    // User ID (cuid)
+  "email": "string",                 // User email
+  "role": "ADMIN" | "CAREGIVER" | "FAMILY",  // User role
+  "status": "PENDING" | "ACTIVE" | "FREEZE" | "REJECTED",
+  "isVerified": boolean,             // Email verification status
+  "createdAt": "ISO 8601 datetime",  // Account creation date
+  "updatedAt": "ISO 8601 datetime",  // Last update date
+  "displayName": "string | null",    // Computed display name
+  "profile": { ... }                 // Role-specific profile data
+}
+
+Note: The "password" field is NEVER returned for security.
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ ADMIN USER RESPONSE                                                         ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+{
+  "id": "clx123abc...",
+  "email": "admin@mazicare.com",
+  "role": "ADMIN",
+  "status": "ACTIVE",
+  "isVerified": true,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-05T08:00:00.000Z",
+  "displayName": "ADMIN",
+  "profile": {
+    "profilePicture": "https://uploadthing.com/f/abc123.jpg" | null
+  }
+}
+
+ADMIN PROFILE FIELDS:
+  - profilePicture: URL from users.profilePicture (after migration)
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ CAREGIVER USER RESPONSE                                                     ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+{
+  "id": "clx456def...",
+  "email": "caregiver@example.com",
+  "role": "CAREGIVER",
+  "status": "ACTIVE",
+  "isVerified": true,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-05T08:00:00.000Z",
+  "displayName": "John Doe",
+  "profile": {
+    "firstName": "John",
+    "lastName": "Doe",
+    "bio": "Experienced caregiver with 10 years...",
+    "profilePicture": "https://uploadthing.com/f/xyz789.jpg" | null,
+    "region": {
+      "id": "region_id",
+      "name": "North Region",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    } | null,
+    "program": {
+      "id": "program_id",
+      "name": "Elderly Care",
+      "description": "Specialized elderly care program",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    } | null,
+    "onboardingComplete": true
+  }
+}
+
+CAREGIVER PROFILE FIELDS:
+  - firstName: Caregiver's first name
+  - lastName: Caregiver's last name
+  - bio: Caregiver's biography/description
+  - profilePicture: URL from caregivers.profilePicture
+  - region: Full region object (if selected)
+  - program: Full care program object (if selected)
+  - onboardingComplete: Whether onboarding is finished
+
+DISPLAY NAME LOGIC:
+  - If both firstName and lastName exist: "FirstName LastName"
+  - If only firstName exists: "FirstName"
+  - If only lastName exists: "LastName"
+  - If neither exists: null
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ FAMILY USER RESPONSE                                                        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+{
+  "id": "clx789ghi...",
+  "email": "family@example.com",
+  "role": "FAMILY",
+  "status": "ACTIVE",
+  "isVerified": true,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-05T08:00:00.000Z",
+  "displayName": "Smith Family",
+  "profile": {
+    "familyName": "Smith Family",
+    "careFor": "elderly",
+    "ageGroup": "65+",
+    "region": "North",
+    "language": "English",
+    "profilePicture": "https://uploadthing.com/f/def456.jpg" | null,
+    "careTypes": ["medical", "companionship", "daily_activities"],
+    "schedule": "full-time",
+    "daysHours": "Monday-Friday, 9AM-5PM",
+    "genderPreference": "no_preference",
+    "experienceLevel": "experienced",
+    "backgroundCheck": true,
+    "onboardingComplete": true
+  }
+}
+
+FAMILY PROFILE FIELDS:
+  - familyName: Family name/identifier
+  - careFor: Who they're caring for (e.g., "elderly", "disabled")
+  - ageGroup: Age group of care recipient
+  - region: Geographic region
+  - language: Preferred language
+  - profilePicture: URL from families.profilePicture
+  - careTypes: Array of care type strings
+  - schedule: Care schedule preference
+  - daysHours: Specific days and hours
+  - genderPreference: Caregiver gender preference
+  - experienceLevel: Required caregiver experience
+  - backgroundCheck: Whether background check is required
+  - onboardingComplete: Whether onboarding is finished
+
+DISPLAY NAME LOGIC:
+  - Uses familyName if it exists
+  - Otherwise: null
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ PROFILE PICTURE LOCATIONS BY USER TYPE                                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ USER TYPE  │ PROFILE PICTURE SOURCE                                        │
+├────────────────────────────────────────────────────────────────────────────┤
+│ ADMIN      │ users.profilePicture                                          │
+│ CAREGIVER  │ caregivers.profilePicture                                     │
+│ FAMILY     │ families.profilePicture                                       │
+└────────────────────────────────────────────────────────────────────────────┘
+
+All profile pictures are stored as UploadThing URLs (HTTPS).
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ SPECIAL CASES                                                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+CASE 1: User exists but hasn't completed onboarding
+  - CAREGIVER without caregiver profile:
+    {
+      "id": "...",
+      "email": "...",
+      "role": "CAREGIVER",
+      "displayName": null,
+      "profile": null
+    }
+  
+  - FAMILY without family profile:
+    {
+      "id": "...",
+      "email": "...",
+      "role": "FAMILY",
+      "displayName": null,
+      "profile": null
+    }
+
+CASE 2: User not found
+  - HTTP 404 Not Found
+  - { "statusCode": 404, "message": "User not found", "error": "Not Found" }
+
+CASE 3: Unauthorized request (no JWT token)
+  - HTTP 401 Unauthorized
+  - { "statusCode": 401, "message": "Unauthorized" }
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ FIELDS THAT ARE NEVER RETURNED                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+For security reasons, these fields are NEVER included in the response:
+  ✗ password (User table)
+  ✗ dateOfBirth (Caregiver table - privacy)
+  ✗ phone (Caregiver table - privacy)
+  ✗ email (Caregiver table - separate from user email)
+  ✗ documentUrl (Caregiver table - sensitive)
+  ✗ stripeAccountId (Caregiver table - sensitive)
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ EXAMPLE API CALLS                                                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+GET PROFILE (cURL):
+  curl -X GET http://localhost:3001/user/profile \
+    -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+GET PROFILE (JavaScript):
+  const response = await fetch('http://localhost:3001/user/profile', {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  const profile = await response.json();
+  console.log(profile.displayName);
+  console.log(profile.profile.profilePicture);
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ SUMMARY                                                                     ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+The GET /user/profile endpoint returns:
+
+1. BASE USER DATA: id, email, role, status, isVerified, timestamps
+2. DISPLAY NAME: Computed based on user type
+3. PROFILE DATA: Role-specific information including profilePicture
+
+PROFILE PICTURE FIELD:
+  - Always included in profile object
+  - Can be null if not uploaded
+  - Contains UploadThing HTTPS URL when set
+  - Location varies by user type (users/caregivers/families table)
+
+The response structure is consistent and predictable, making it easy to
+consume in frontend applications.
+
+╔══════════════════════════════════════════════════════════════════════════════╗

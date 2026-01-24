@@ -1,0 +1,178 @@
+import { CareRequestService } from './care-request.service';
+import { CreateCareRequestDto } from './dto/create-care-request.dto';
+import { UpdateCareRequestDto } from './dto/update-care-request.dto';
+export declare class CareRequestController {
+    private readonly careRequestService;
+    constructor(careRequestService: CareRequestService);
+    create(req: any, createCareRequestDto: CreateCareRequestDto): Promise<{
+        id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.RequestStatus;
+        updatedAt: Date;
+        caregiverId: string;
+        familyId: string;
+        careType: import(".prisma/client").$Enums.CareType;
+        careDays: import(".prisma/client").$Enums.DayOfWeek[];
+        requestedAt: Date;
+        respondedAt: Date | null;
+        expiresAt: Date | null;
+        elderId: string;
+    }>;
+    findAll(req: any): Promise<{
+        id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.RequestStatus;
+        updatedAt: Date;
+        caregiverId: string;
+        familyId: string;
+        careType: import(".prisma/client").$Enums.CareType;
+        careDays: import(".prisma/client").$Enums.DayOfWeek[];
+        requestedAt: Date;
+        respondedAt: Date | null;
+        expiresAt: Date | null;
+        elderId: string;
+    }[]>;
+    findOne(id: string, req: any): Promise<{
+        caregiver: {
+            user: {
+                id: string;
+                createdAt: Date;
+                status: import(".prisma/client").$Enums.AccountStatus;
+                updatedAt: Date;
+                email: string;
+                phoneNumber: string | null;
+                password: string | null;
+                role: import(".prisma/client").$Enums.UserRole;
+                isVerified: boolean;
+                phoneVerified: boolean;
+                profilePicture: string | null;
+            };
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: string;
+            email: string | null;
+            profilePicture: string | null;
+            firstName: string | null;
+            lastName: string | null;
+            dateOfBirth: string | null;
+            gender: string | null;
+            region: string | null;
+            bio: string | null;
+            phone: string | null;
+            regionId: string | null;
+            documentUrl: string | null;
+            idPassportPhoto: string | null;
+            recommendationLetter: string | null;
+            certificates: string[];
+            experience: number | null;
+            onboardingComplete: boolean;
+            stripeAccountId: string | null;
+            languages: string[];
+        };
+        family: {
+            user: {
+                id: string;
+                createdAt: Date;
+                status: import(".prisma/client").$Enums.AccountStatus;
+                updatedAt: Date;
+                email: string;
+                phoneNumber: string | null;
+                password: string | null;
+                role: import(".prisma/client").$Enums.UserRole;
+                isVerified: boolean;
+                phoneVerified: boolean;
+                profilePicture: string | null;
+            };
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: string;
+            profilePicture: string | null;
+            region: string | null;
+            phone: string | null;
+            onboardingComplete: boolean;
+            familyName: string | null;
+            careFor: string | null;
+            ageGroup: string | null;
+            language: string | null;
+            careTypes: string[];
+            schedule: string | null;
+            daysHours: string | null;
+            genderPreference: string | null;
+            experienceLevel: string | null;
+            backgroundCheck: boolean;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.RequestStatus;
+        updatedAt: Date;
+        caregiverId: string;
+        familyId: string;
+        careType: import(".prisma/client").$Enums.CareType;
+        careDays: import(".prisma/client").$Enums.DayOfWeek[];
+        requestedAt: Date;
+        respondedAt: Date | null;
+        expiresAt: Date | null;
+        elderId: string;
+    }>;
+    update(id: string, req: any, updateCareRequestDto: UpdateCareRequestDto): Promise<{
+        id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.RequestStatus;
+        updatedAt: Date;
+        caregiverId: string;
+        familyId: string;
+        careType: import(".prisma/client").$Enums.CareType;
+        careDays: import(".prisma/client").$Enums.DayOfWeek[];
+        requestedAt: Date;
+        respondedAt: Date | null;
+        expiresAt: Date | null;
+        elderId: string;
+    }>;
+    remove(id: string, req: any): Promise<{
+        id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.RequestStatus;
+        updatedAt: Date;
+        caregiverId: string;
+        familyId: string;
+        careType: import(".prisma/client").$Enums.CareType;
+        careDays: import(".prisma/client").$Enums.DayOfWeek[];
+        requestedAt: Date;
+        respondedAt: Date | null;
+        expiresAt: Date | null;
+        elderId: string;
+    }>;
+    accept(id: string, req: any): Promise<{
+        id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.RequestStatus;
+        updatedAt: Date;
+        caregiverId: string;
+        familyId: string;
+        careType: import(".prisma/client").$Enums.CareType;
+        careDays: import(".prisma/client").$Enums.DayOfWeek[];
+        requestedAt: Date;
+        respondedAt: Date | null;
+        expiresAt: Date | null;
+        elderId: string;
+    }>;
+    reject(id: string, req: any): Promise<{
+        id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.RequestStatus;
+        updatedAt: Date;
+        caregiverId: string;
+        familyId: string;
+        careType: import(".prisma/client").$Enums.CareType;
+        careDays: import(".prisma/client").$Enums.DayOfWeek[];
+        requestedAt: Date;
+        respondedAt: Date | null;
+        expiresAt: Date | null;
+        elderId: string;
+    }>;
+}

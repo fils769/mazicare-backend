@@ -1,0 +1,1121 @@
+{
+    "info": {
+        "name": "MaziCare Backend API",
+        "description": "Complete API testing collection for MaziCare backend - All features starting from Family module",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "1. Authentication",
+            "item": [
+                {
+                    "name": "Login as Family",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set(\"family_token\", response.access_token);",
+                                    "    console.log(\"Family token saved:\", response.access_token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"john.smith@example.com\",\n  \"password\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login as Caregiver",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set(\"caregiver_token\", response.access_token);",
+                                    "    console.log(\"Caregiver token saved:\", response.access_token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"sarah.johnson@example.com\",\n  \"password\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login as Admin",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set(\"admin_token\", response.access_token);",
+                                    "    console.log(\"Admin token saved:\", response.access_token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"admin@mazicare.com\",\n  \"password\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Current User",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/auth/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "me"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Register New Family User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"test.family@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"FAMILY\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "register"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2. Family Module",
+            "item": [
+                {
+                    "name": "Get Family Profile",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set(\"family_id\", response.id);",
+                                    "    console.log(\"Family ID saved:\", response.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/families/profile",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "families",
+                                "profile"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Family Profile",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"familyName\": \"Smith Family - Updated\",\n  \"region\": \"Toronto\",\n  \"language\": \"English\",\n  \"careTypes\": [\"Personal Care\", \"Medication Management\", \"Mobility Assistance\"],\n  \"schedule\": \"Part-time\",\n  \"daysHours\": \"Monday-Wednesday, 9AM-5PM\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/families/profile",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "families",
+                                "profile"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List All Elders",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const response = pm.response.json();",
+                                    "    if (response.length > 0) {",
+                                    "        pm.environment.set(\"elder_id\", response[0].id);",
+                                    "        console.log(\"Elder ID saved:\", response[0].id);",
+                                    "    }",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/families/elders",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "families",
+                                "elders"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Add New Elder",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"firstName\": \"Elizabeth\",\n  \"lastName\": \"Smith\",\n  \"dateOfBirth\": \"1945-06-20\",\n  \"gender\": \"FEMALE\",\n  \"description\": \"Requires assistance with daily living activities\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/families/elders",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "families",
+                                "elders"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Elder",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"firstName\": \"Robert\",\n  \"lastName\": \"Smith\",\n  \"description\": \"Needs daily assistance with medication and mobility\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/families/elders/{{elder_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "families",
+                                "elders",
+                                "{{elder_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Elder",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/families/elders/{{elder_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "families",
+                                "elders",
+                                "{{elder_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "3. Caregiver Module",
+            "item": [
+                {
+                    "name": "Get Caregiver Profile",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set(\"caregiver_id\", response.id);",
+                                    "    console.log(\"Caregiver ID saved:\", response.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{caregiver_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caregivers/profile",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caregivers",
+                                "profile"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Caregiver Profile",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{caregiver_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"firstName\": \"Sarah\",\n  \"lastName\": \"Johnson\",\n  \"bio\": \"Experienced senior care specialist with 5+ years of compassionate service\",\n  \"phone\": \"+1-416-555-1000\",\n  \"experience\": 6\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/caregivers/profile",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caregivers",
+                                "profile"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List All Caregivers",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caregivers",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caregivers"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Caregiver by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caregivers/{{caregiver_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caregivers",
+                                "{{caregiver_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "4. Elder Module",
+            "item": [
+                {
+                    "name": "Get Elder Details",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/elders/{{elder_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "elders",
+                                "{{elder_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Elder Schedule",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/elders/{{elder_id}}/schedule",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "elders",
+                                "{{elder_id}}",
+                                "schedule"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Elder Schedule",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"day\": \"WEDNESDAY\",\n  \"start\": \"07:00\",\n  \"end\": \"20:00\",\n  \"items\": [\n    {\n      \"title\": \"Morning Medication\",\n      \"startTime\": \"07:00\",\n      \"endTime\": \"07:30\"\n    },\n    {\n      \"title\": \"Breakfast\",\n      \"startTime\": \"08:00\",\n      \"endTime\": \"09:00\"\n    },\n    {\n      \"title\": \"Exercise\",\n      \"startTime\": \"10:00\",\n      \"endTime\": \"11:00\"\n    },\n    {\n      \"title\": \"Lunch\",\n      \"startTime\": \"12:30\",\n      \"endTime\": \"13:30\"\n    },\n    {\n      \"title\": \"Evening Medication\",\n      \"startTime\": \"19:30\",\n      \"endTime\": \"20:00\"\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/elders/{{elder_id}}/schedule",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "elders",
+                                "{{elder_id}}",
+                                "schedule"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "5. Messaging Module",
+            "item": [
+                {
+                    "name": "List Conversations",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const response = pm.response.json();",
+                                    "    if (response.length > 0) {",
+                                    "        pm.environment.set(\"conversation_id\", response[0].id);",
+                                    "        console.log(\"Conversation ID saved:\", response[0].id);",
+                                    "    }",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/messages/conversations",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "messages",
+                                "conversations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Conversation Messages",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/messages/conversations/{{conversation_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "messages",
+                                "conversations",
+                                "{{conversation_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Send Message",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"recipientId\": \"{{caregiver_user_id}}\",\n  \"content\": \"How is Robert's physical therapy session going?\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/messages",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "messages"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "6. Notification Module",
+            "item": [
+                {
+                    "name": "List Notifications",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/notifications",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Mark as Read",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/notifications/{{notification_id}}/read",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "{{notification_id}}",
+                                "read"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Notification",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/notifications/{{notification_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "{{notification_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "7. Event Module",
+            "item": [
+                {
+                    "name": "List Events",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/events",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "events"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Event Details",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/events/{{event_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "events",
+                                "{{event_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Register for Event",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/events/{{event_id}}/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "events",
+                                "{{event_id}}",
+                                "register"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "8. Subscription Module",
+            "item": [
+                {
+                    "name": "List Plans",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/subscriptions/plans",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "subscriptions",
+                                "plans"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get My Subscription",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/subscriptions/my-subscription",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "subscriptions",
+                                "my-subscription"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Renew Subscription",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"planId\": \"{{plan_id}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/subscriptions/renew",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "subscriptions",
+                                "renew"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "9. Payment Module",
+            "item": [
+                {
+                    "name": "Create Subscription Checkout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"planId\": \"{{plan_id}}\",\n  \"successUrl\": \"http://localhost:3000/payment/success\",\n  \"cancelUrl\": \"http://localhost:3000/payment/cancel\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/payments/subscription/checkout",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "payments",
+                                "subscription",
+                                "checkout"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Confirm Subscription Payment",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"sessionId\": \"cs_test_...\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/payments/subscription/confirm",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "payments",
+                                "subscription",
+                                "confirm"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Caregiver Payment",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{family_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"caregiverId\": \"{{caregiver_id}}\",\n  \"amount\": 100.00,\n  \"currency\": \"usd\",\n  \"successUrl\": \"http://localhost:3000/payment/success\",\n  \"cancelUrl\": \"http://localhost:3000/payment/cancel\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/payments/caregiver/checkout",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "payments",
+                                "caregiver",
+                                "checkout"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "10. Admin Module",
+            "item": [
+                {
+                    "name": "List All Families",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/admin/families",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "admin",
+                                "families"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List All Caregivers",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/admin/caregivers",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "admin",
+                                "caregivers"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List All Elders",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/admin/elders",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "admin",
+                                "elders"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Caregiver Status",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"ACTIVE\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/admin/caregivers/{{caregiver_id}}/status",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "admin",
+                                "caregivers",
+                                "{{caregiver_id}}",
+                                "status"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Activity Logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/admin/activity-logs?category=USER_ACTIVITY&limit=50",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "admin",
+                                "activity-logs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "category",
+                                    "value": "USER_ACTIVITY"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "50"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:3000",
+            "type": "string"
+        }
+    ]
+}

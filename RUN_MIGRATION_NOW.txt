@@ -1,0 +1,62 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║              UPDATE REQUIRED: Profile Picture AND Phone Numbers              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+UPDATES INCLUDED:
+1. Admin Profile Pictures (users.profilePicture)
+2. Family Phone Numbers (families.phone) - NEW!
+   - Caregivers already had phone numbers
+   - Families can now save phone numbers too
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ SOLUTION: Follow These Steps EXACTLY                                        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+STEP 1: Stop the server
+  In the terminal where npm start is running:
+  Press: Ctrl + C
+  (Wait for it to stop)
+
+STEP 2: Update Database (Run this ONCE)
+  
+  npx prisma db push
+  
+  This will:
+  - Add profilePicture to 'users' table
+  - Add phone to 'families' table
+  - NOT delete your data
+  
+  Type 'y' if asked to continue.
+
+STEP 3: Start the server
+  npm start
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ WHAT YOU WILL SEE                                                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+1. GET /user/profile will now include 'phone':
+   
+   CAREGIVER:
+   {
+     "profile": {
+       ...
+       "phone": "123-456-7890",
+       ...
+     }
+   }
+
+   FAMILY:
+   {
+     "profile": {
+       ...
+       "phone": "987-654-3210",  (New field!)
+       ...
+     }
+   }
+
+2. Admins can upload profile pictures via PUT /user/profile-picture
+
+3. New Families can submit phone numbers during onboarding
+
+╔══════════════════════════════════════════════════════════════════════════════╗
