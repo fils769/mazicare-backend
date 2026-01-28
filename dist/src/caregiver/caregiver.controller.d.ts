@@ -239,6 +239,7 @@ export declare class CaregiverController {
         } & {
             id: string;
             createdAt: Date;
+            status: import(".prisma/client").$Enums.ScheduleStatus;
             updatedAt: Date;
             elderId: string;
             day: import(".prisma/client").$Enums.DayOfWeek;
@@ -274,6 +275,7 @@ export declare class CaregiverController {
         } & {
             id: string;
             createdAt: Date;
+            status: import(".prisma/client").$Enums.ScheduleStatus;
             updatedAt: Date;
             elderId: string;
             day: import(".prisma/client").$Enums.DayOfWeek;

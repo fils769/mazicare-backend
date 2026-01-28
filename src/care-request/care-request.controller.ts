@@ -9,6 +9,9 @@ import {
   Delete,
   UseGuards,
   Request,
+  HttpCode,
+  HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { CareRequestService } from './care-request.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -22,6 +25,7 @@ import {
 } from '@nestjs/swagger';
 import { CreateCareRequestDto } from './dto/create-care-request.dto';
 import { UpdateCareRequestDto } from './dto/update-care-request.dto';
+import { RemoveCaregiverRelationDto } from './dto/remove-caregiver-relation.dto';
 
 @ApiTags('care-requests')
 @ApiBearerAuth()
@@ -110,4 +114,39 @@ export class CareRequestController {
   async reject(@Param('id') id: string, @Request() req) {
     return this.careRequestService.rejectCareRequest(req.user.userId, id);
   }
+
+  @Delete('caregiver/:caregiverId/remove')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove caregiver from family (end care relationship)' })
+  @ApiResponse({ status: 200, description: 'Relationship ended successfully' })
+  @ApiResponse({ status: 404, description: 'Caregiver or family not found' })
+  @ApiResponse({ status: 400, description: 'No active relationship found' })
+  @HttpCode(HttpStatus.OK)
+  async removeCaregiverFromFamily(
+    @Param('caregiverId') caregiverId: string,
+    @Body() removeDto: RemoveCaregiverRelationDto,
+    @Request() req
+  ) {
+    const actorId = req.user.id;
+    
+    return this.careRequestService.removeCaregiverFromFamily(
+      caregiverId,
+      removeDto.familyId,
+      removeDto.reason,
+      actorId
+    );
+  }
+
+  // Cancel a care request
+@Delete(':id/cancel')
+@ApiOperation({ summary: 'Cancel a care request' })
+@ApiParam({ name: 'id', description: 'Care request ID' })
+@ApiResponse({ status: 200, description: 'Care request cancelled successfully' })
+@ApiResponse({ status: 404, description: 'Care request not found' })
+@ApiResponse({ status: 403, description: 'Not authorized to cancel this request' })
+@ApiResponse({ status: 400, description: 'Cannot cancel request in current status' })
+async cancel(@Param('id') id: string, @Request() req) {
+  return this.careRequestService.cancelCareRequest(req.user.userId, id);
+}
 }

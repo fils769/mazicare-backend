@@ -267,6 +267,7 @@ let FamilyService = class FamilyService {
                             include: {
                                 caregiver: {
                                     select: {
+                                        id: true,
                                         firstName: true,
                                         lastName: true,
                                         email: true,
@@ -298,10 +299,12 @@ let FamilyService = class FamilyService {
                     ? caregiver.email || caregiver.user.email
                     : null,
                 caregiverProfile: caregiver?.profilePicture || null,
+                caregiverId: caregiver?.id || null,
                 DOB: elder.dateOfBirth,
                 Gender: elder.gender.toLowerCase(),
                 description: elder.description,
                 profilePicture: elder.profilePicture,
+                familyId: elder.familyId
             };
         });
     }

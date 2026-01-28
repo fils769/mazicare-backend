@@ -118,10 +118,12 @@ export declare class FamilyService {
         careGiver: string | null;
         caregiverEmail: string | null;
         caregiverProfile: string | null;
+        caregiverId: string | null;
         DOB: Date;
         Gender: string;
         description: string | null;
         profilePicture: string | null;
+        familyId: string;
     }[]>;
     registerElder(userId: string, elderData: any, profilePicture?: string): Promise<{
         id: string;

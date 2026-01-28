@@ -19,6 +19,7 @@ const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const swagger_1 = require("@nestjs/swagger");
 const create_care_request_dto_1 = require("./dto/create-care-request.dto");
 const update_care_request_dto_1 = require("./dto/update-care-request.dto");
+const remove_caregiver_relation_dto_1 = require("./dto/remove-caregiver-relation.dto");
 let CareRequestController = class CareRequestController {
     careRequestService;
     constructor(careRequestService) {
@@ -44,6 +45,13 @@ let CareRequestController = class CareRequestController {
     }
     async reject(id, req) {
         return this.careRequestService.rejectCareRequest(req.user.userId, id);
+    }
+    async removeCaregiverFromFamily(caregiverId, removeDto, req) {
+        const actorId = req.user.id;
+        return this.careRequestService.removeCaregiverFromFamily(caregiverId, removeDto.familyId, removeDto.reason, actorId);
+    }
+    async cancel(id, req) {
+        return this.careRequestService.cancelCareRequest(req.user.userId, id);
     }
 };
 exports.CareRequestController = CareRequestController;
@@ -132,6 +140,36 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], CareRequestController.prototype, "reject", null);
+__decorate([
+    (0, common_1.Delete)('caregiver/:caregiverId/remove'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Remove caregiver from family (end care relationship)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Relationship ended successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Caregiver or family not found' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'No active relationship found' }),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Param)('caregiverId')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, remove_caregiver_relation_dto_1.RemoveCaregiverRelationDto, Object]),
+    __metadata("design:returntype", Promise)
+], CareRequestController.prototype, "removeCaregiverFromFamily", null);
+__decorate([
+    (0, common_1.Delete)(':id/cancel'),
+    (0, swagger_1.ApiOperation)({ summary: 'Cancel a care request' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Care request ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Care request cancelled successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Care request not found' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Not authorized to cancel this request' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Cannot cancel request in current status' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], CareRequestController.prototype, "cancel", null);
 exports.CareRequestController = CareRequestController = __decorate([
     (0, swagger_1.ApiTags)('care-requests'),
     (0, swagger_1.ApiBearerAuth)(),

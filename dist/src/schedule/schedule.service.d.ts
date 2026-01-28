@@ -23,6 +23,7 @@ export declare class ScheduleService {
     } & {
         id: string;
         createdAt: Date;
+        status: import(".prisma/client").$Enums.ScheduleStatus;
         updatedAt: Date;
         elderId: string;
         day: import(".prisma/client").$Enums.DayOfWeek;
@@ -45,6 +46,7 @@ export declare class ScheduleService {
     } & {
         id: string;
         createdAt: Date;
+        status: import(".prisma/client").$Enums.ScheduleStatus;
         updatedAt: Date;
         elderId: string;
         day: import(".prisma/client").$Enums.DayOfWeek;
@@ -67,6 +69,7 @@ export declare class ScheduleService {
     } & {
         id: string;
         createdAt: Date;
+        status: import(".prisma/client").$Enums.ScheduleStatus;
         updatedAt: Date;
         elderId: string;
         day: import(".prisma/client").$Enums.DayOfWeek;
@@ -89,6 +92,7 @@ export declare class ScheduleService {
     } & {
         id: string;
         createdAt: Date;
+        status: import(".prisma/client").$Enums.ScheduleStatus;
         updatedAt: Date;
         elderId: string;
         day: import(".prisma/client").$Enums.DayOfWeek;
@@ -110,6 +114,7 @@ export declare class ScheduleService {
     deleteSchedule(scheduleId: string): Promise<{
         id: string;
         createdAt: Date;
+        status: import(".prisma/client").$Enums.ScheduleStatus;
         updatedAt: Date;
         elderId: string;
         day: import(".prisma/client").$Enums.DayOfWeek;

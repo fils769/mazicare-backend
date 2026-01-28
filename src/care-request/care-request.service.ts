@@ -9,7 +9,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CareType, CreateCareRequestDto, DayOfWeek } from './dto/create-care-request.dto';
 import { UpdateCareRequestDto } from './dto/update-care-request.dto';
-import { CareRequest, Prisma } from '@prisma/client';
+import { CareRequest, Prisma, RequestStatus } from '@prisma/client';
 
 @Injectable()
 export class CareRequestService {
@@ -230,4 +230,435 @@ export class CareRequestService {
       data: { status: 'REJECTED', respondedAt: new Date() },
     });
   }
+
+  async removeCaregiverFromFamily(
+    caregiverId: string,
+    familyId: string,
+    reason?: string,
+    actorId?: string
+  ) {
+    // Check if caregiver exists
+    const caregiver = await this.prisma.caregiver.findUnique({
+      where: { id: caregiverId },
+      include: { user: true }
+    });
+  
+    if (!caregiver) {
+      throw new NotFoundException('Caregiver not found');
+    }
+  
+    // Check if family exists
+    const family = await this.prisma.family.findUnique({
+      where: { id: familyId },
+      include: { user: true }
+    });
+  
+    if (!family) {
+      throw new NotFoundException('Family not found');
+    }
+  
+    // Find all active care requests between this caregiver and family
+    const careRequests = await this.prisma.careRequest.findMany({
+      where: {
+        caregiverId,
+        familyId,
+        status: { in: ['PENDING', 'ACCEPTED'] } // Only active requests
+      },
+      include: {
+        elder: true,
+        schedules: {
+          include: {
+            scheduleItems: true
+          }
+        }
+      }
+    });
+  
+    if (careRequests.length === 0) {
+      throw new BadRequestException('No active care relationship found between this caregiver and family');
+    }
+  
+    return await this.prisma.$transaction(async (tx) => {
+      // Get all schedule IDs first for logging
+      const allScheduleIds = careRequests.flatMap(request => 
+        request.schedules.map(schedule => schedule.id)
+      );
+  
+      const allScheduleItemIds = careRequests.flatMap(request => 
+        request.schedules.flatMap(schedule => 
+          schedule.scheduleItems.map(item => item.id)
+        )
+      );
+  
+      // 1. Delete schedule items first (due to foreign key constraints)
+      if (allScheduleItemIds.length > 0) {
+        await tx.scheduleItem.deleteMany({
+          where: {
+            id: { in: allScheduleItemIds }
+          }
+        });
+      }
+  
+      // 2. Delete schedules
+      if (allScheduleIds.length > 0) {
+        await tx.schedule.deleteMany({
+          where: {
+            id: { in: allScheduleIds }
+          }
+        });
+      }
+  
+      // 3. Update all care requests to CANCELLED
+      const updatedRequests = await tx.careRequest.updateMany({
+        where: {
+          caregiverId,
+          familyId,
+          status: { in: ['PENDING', 'ACCEPTED'] }
+        },
+        data: {
+          status: 'CANCELLED',
+          updatedAt: new Date()
+        }
+      });
+  
+      // 4. Create activity logs
+      if (actorId) {
+        for (const request of careRequests) {
+          await tx.activityLog.create({
+            data: {
+              userId: actorId,
+              actorRole: 'FAMILY',
+              category: 'USER_ACTIVITY',
+              eventType: 'CARE_RELATIONSHIP_ENDED',
+              entityType: 'CareRequest',
+              entityId: request.id,
+              metadata: {
+                caregiverId,
+                caregiverName: `${caregiver.firstName} ${caregiver.lastName}`,
+                familyId,
+                familyName: family.familyName,
+                elderId: request.elderId,
+                elderName: `${request.elder.firstName} ${request.elder.lastName}`,
+                reason,
+                schedulesDeleted: request.schedules.length,
+                scheduleItemsDeleted: request.schedules.reduce(
+                  (total, schedule) => total + schedule.scheduleItems.length, 0
+                ),
+                timestamp: new Date().toISOString()
+              }
+            }
+          });
+        }
+      }
+  
+      // 5. Send notifications to both parties
+      const notificationPromises: Promise<any>[] = [];
+  
+      // Notify caregiver
+      notificationPromises.push(
+        tx.notification.create({
+          data: {
+            userId: caregiver.userId,
+            title: 'Care Relationship Ended',
+            message: `Your care relationship with ${family.familyName}'s family has been ended. ${reason ? `Reason: ${reason}` : ''}`,
+            type: 'CARE_RELATIONSHIP_CHANGE'
+          }
+        })
+      );
+  
+      // Notify family
+      notificationPromises.push(
+        tx.notification.create({
+          data: {
+            userId: family.userId,
+            title: 'Caregiver Removed',
+            message: `You have removed ${caregiver.firstName} ${caregiver.lastName} as a caregiver.`,
+            type: 'CARE_RELATIONSHIP_CHANGE'
+          }
+        })
+      );
+  
+      await Promise.all(notificationPromises);
+  
+      return {
+        message: 'Caregiver successfully removed from family',
+        details: {
+          caregiver: {
+            id: caregiverId,
+            name: `${caregiver.firstName} ${caregiver.lastName}`
+          },
+          family: {
+            id: familyId,
+            name: family.familyName
+          },
+          careRequestsCancelled: updatedRequests.count,
+          schedulesDeleted: allScheduleIds.length,
+          scheduleItemsDeleted: allScheduleItemIds.length,
+          reason
+        }
+      };
+    });
+  }
+
+  
+  async getCaregiverRelationships(caregiverId: string) {
+    return this.prisma.careRequest.findMany({
+      where: {
+        caregiverId,
+        status: { in: ['PENDING', 'ACCEPTED'] }
+      },
+      include: {
+        family: {
+          include: {
+            user: true
+          }
+        },
+        elder: true,
+        schedules: true
+      },
+      orderBy: {
+        requestedAt: 'desc'
+      }
+    });
+  }
+
+/** Cancel a care request */
+async cancelCareRequest(userId: string, requestId: string, reason?: string) {
+  return this.prisma.$transaction(async (tx) => {
+    // First, get the request with necessary relations
+    const request = await tx.careRequest.findUnique({
+      where: { id: requestId },
+      include: { 
+        family: { include: { user: true } },
+        caregiver: { include: { user: true } },
+        elder: true,
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Care request not found');
+    }
+
+    // Check if user is authorized to cancel this request
+    const isRequester = request.family.userId === userId;
+    const isCaregiver = request.caregiver?.userId === userId;
+    
+    if (!isRequester && !isCaregiver) {
+      throw new ForbiddenException('Not authorized to cancel this request');
+    }
+
+    // Check if request can be cancelled (only pending or accepted)
+    if (request.status !== 'PENDING' && request.status !== 'ACCEPTED') {
+      throw new BadRequestException(
+        `Cannot cancel a request with status: ${request.status}. ` +
+        `Only PENDING or ACCEPTED requests can be cancelled.`
+      );
+    }
+
+    // Check if request has expired (only for PENDING status)
+    if (request.status === 'PENDING' && request.expiresAt && request.expiresAt < new Date()) {
+      // Auto-expire if expired
+      await tx.careRequest.update({
+        where: { id: requestId },
+        data: { 
+          status: 'EXPIRED',
+          updatedAt: new Date(),
+        },
+      });
+      throw new BadRequestException('This request has already expired');
+    }
+
+    // Update the request status to CANCELLED
+    const cancelledRequest = await tx.careRequest.update({
+      where: { id: requestId },
+      data: { 
+        status: 'CANCELLED',
+        respondedAt: request.status === 'PENDING' ? new Date() : request.respondedAt,
+        updatedAt: new Date(),
+      },
+      include: {
+        family: { include: { user: true } },
+        caregiver: { include: { user: true } },
+        elder: true,
+      },
+    });
+
+    // Create activity log with proper types
+    await tx.activityLog.create({
+      data: {
+        userId,
+        actorRole: isRequester ? 'FAMILY' : 'CAREGIVER' as any, 
+        category: 'USER_ACTIVITY',
+        eventType: 'CARE_REQUEST_CANCELLED',
+        entityType: 'CareRequest',
+        entityId: request.id,
+        metadata: {
+          requestId: request.id,
+          previousStatus: request.status,
+          cancelledBy: isRequester ? 'family' : 'caregiver',
+          familyName: request.family.familyName,
+          caregiverName: request.caregiver ? 
+            `${request.caregiver.firstName} ${request.caregiver.lastName}` : 'Unknown',
+          elderName: `${request.elder.firstName} ${request.elder.lastName}`,
+          reason: reason || null,
+          timestamp: new Date().toISOString(),
+        } as any,
+      }
+    });
+
+    // Send notification to the other party
+    const notificationPromises: Promise<any>[] = [];
+    
+    if (isRequester && request.caregiver?.userId) {
+      // If family cancelled, notify caregiver
+      notificationPromises.push(
+        tx.notification.create({
+          data: {
+            userId: request.caregiver.userId,
+            title: 'Care Request Cancelled',
+            message: `${request.family.familyName} has cancelled the care request for ${request.elder.firstName}.`,
+            type: 'CARE_REQUEST_UPDATE',
+          }
+        })
+      );
+    } else if (isCaregiver && request.family.userId) {
+      // If caregiver cancelled, notify family
+      notificationPromises.push(
+        tx.notification.create({
+          data: {
+            userId: request.family.userId,
+            title: 'Care Request Cancelled',
+            message: `${request.caregiver.firstName} ${request.caregiver.lastName} has cancelled the care request for ${request.elder.firstName}.`,
+            type: 'CARE_REQUEST_UPDATE',
+          }
+        })
+      );
+    }
+
+    // Send all notifications
+    if (notificationPromises.length > 0) {
+      await Promise.all(notificationPromises);
+    }
+
+    return {
+      message: 'Care request cancelled successfully',
+      data: cancelledRequest,
+    };
+  });
+}
+/** Auto-expire pending requests that have passed their expiry date */
+async expirePendingRequests() {
+  const expiredRequests = await this.prisma.careRequest.findMany({
+    where: {
+      status: 'PENDING',
+      expiresAt: {
+        lt: new Date(),
+      },
+    },
+    include: {
+      family: true,
+      caregiver: { include: { user: true } },
+      elder: true,
+    },
+  });
+
+  const results = await Promise.allSettled(
+    expiredRequests.map(async (request) => {
+      return this.prisma.$transaction(async (tx) => {
+        // Update request status to EXPIRED
+        const expiredRequest = await tx.careRequest.update({
+          where: { id: request.id },
+          data: {
+            status: 'EXPIRED',
+            updatedAt: new Date(),
+          },
+        });
+
+        // Create activity log - skip for now or use an admin user
+        // Since SYSTEM role is not in your enum, use ADMIN or null
+        const adminUser = await tx.user.findFirst({
+          where: { role: 'ADMIN' }
+        });
+
+        if (adminUser) {
+          await tx.activityLog.create({
+            data: {
+              userId: adminUser.id,
+              actorRole: 'ADMIN',
+              category: 'FEATURE_USAGE',
+              eventType: 'REQUEST_EXPIRED',
+              entityType: 'CareRequest',
+              entityId: request.id,
+              metadata: {
+                requestId: request.id,
+                expiredAt: new Date().toISOString(),
+                originalExpiresAt: request.expiresAt?.toISOString(),
+                familyName: request.family.familyName,
+                caregiverName: request.caregiver ? 
+                  `${request.caregiver.firstName} ${request.caregiver.lastName}` : 'Unknown',
+                elderName: `${request.elder.firstName} ${request.elder.lastName}`,
+              } as any,
+            }
+          });
+        }
+
+        // Notify family
+        await tx.notification.create({
+          data: {
+            userId: request.family.userId,
+            title: 'Request Expired',
+            message: `Your care request for ${request.elder.firstName} has expired without a response.`,
+            type: 'CARE_REQUEST_UPDATE',
+          }
+        });
+
+        return expiredRequest;
+      });
+    })
+  );
+
+  return {
+    message: `Processed ${expiredRequests.length} expired requests`,
+    details: results,
+  };
+}
+/** Get cancellable requests for a user */
+async getCancellableRequests(userId: string) {
+  const user = await this.prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      family: true,
+      caregiver: true,
+    },
+  });
+
+  if (!user) throw new NotFoundException('User not found');
+
+  let whereClause: any = {
+    status: {
+      in: [RequestStatus.PENDING, RequestStatus.ACCEPTED],
+    },
+  };
+
+  if (user.role === 'FAMILY' && user.family) {
+    whereClause.familyId = user.family.id;
+  } else if (user.role === 'CAREGIVER' && user.caregiver) {
+    whereClause.caregiverId = user.caregiver.id;
+  } else {
+    return [];
+  }
+
+  return this.prisma.careRequest.findMany({
+    where: whereClause,
+    include: {
+      elder: true,
+      family: user.role === 'CAREGIVER' ? { include: { user: true } } : false,
+      caregiver: user.role === 'FAMILY' ? { include: { user: true } } : false,
+      schedules: true,
+    },
+    orderBy: {
+      requestedAt: 'desc',
+    },
+  });
+}
 }

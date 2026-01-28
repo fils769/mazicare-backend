@@ -84,10 +84,12 @@ export declare class FamilyController {
         careGiver: string | null;
         caregiverEmail: string | null;
         caregiverProfile: string | null;
+        caregiverId: string | null;
         DOB: Date;
         Gender: string;
         description: string | null;
         profilePicture: string | null;
+        familyId: string;
     }[]>;
     registerElder(req: any, elderData: any, profilePicture?: Express.Multer.File): Promise<{
         id: string;
