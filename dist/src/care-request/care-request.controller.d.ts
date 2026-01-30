@@ -193,6 +193,23 @@ export declare class CareRequestController {
             reason: string | undefined;
         };
     }>;
+    removeFamilyFromCaregiver(caregiverId: string, removeDto: RemoveCaregiverRelationDto, req: any): Promise<{
+        message: string;
+        details: {
+            caregiver: {
+                id: string;
+                name: string;
+            };
+            family: {
+                id: string;
+                name: string | null;
+            };
+            careRequestsCancelled: number;
+            schedulesDeleted: number;
+            scheduleItemsDeleted: number;
+            reason: string | undefined;
+        };
+    }>;
     cancel(id: string, req: any): Promise<{
         message: string;
         data: {

@@ -177,7 +177,24 @@ export declare class CareRequestService {
         createdAt: Date;
         updatedAt: Date;
     }>;
-    removeCaregiverFromFamily(caregiverId: string, familyId: string, reason?: string, actorId?: string): Promise<{
+    removeCaregiverFromFamily(caregiverId: string, elderId: string, reason?: string, actorId?: string): Promise<{
+        message: string;
+        details: {
+            caregiver: {
+                id: string;
+                name: string;
+            };
+            family: {
+                id: string;
+                name: string | null;
+            };
+            careRequestsCancelled: number;
+            schedulesDeleted: number;
+            scheduleItemsDeleted: number;
+            reason: string | undefined;
+        };
+    }>;
+    removeFamilyFromCaregiver(caregiverUserId: string, familyId: string, reason?: string, actorId?: string): Promise<{
         message: string;
         details: {
             caregiver: {

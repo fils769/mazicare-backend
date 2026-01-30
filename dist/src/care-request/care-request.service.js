@@ -17,18 +17,49 @@ const client_1 = require("@prisma/client");
 let CareRequestService = class CareRequestService {
     prisma;
     defaultScheduleItems = [
-        { title: 'Morning Medication & Breakfast', startTime: '08:00', endTime: '09:00', description: 'Administer morning medication and assist with breakfast' },
-        { title: 'Personal Care', startTime: '10:00', endTime: '11:00', description: 'Assist with bathing, grooming, and dressing' },
-        { title: 'Lunch & Medication', startTime: '12:30', endTime: '13:30', description: 'Assist with lunch and administer midday medication' },
-        { title: 'Afternoon Activities', startTime: '15:00', endTime: '16:00', description: 'Light exercise and social activities' },
-        { title: 'Dinner & Medication', startTime: '18:00', endTime: '19:00', description: 'Assist with dinner and administer evening medication' },
-        { title: 'Evening Care', startTime: '20:00', endTime: '21:00', description: 'Prepare for bed and assist with nighttime routine' },
+        {
+            title: 'Morning Medication & Breakfast',
+            startTime: '08:00',
+            endTime: '09:00',
+            description: 'Administer morning medication and assist with breakfast',
+        },
+        {
+            title: 'Personal Care',
+            startTime: '10:00',
+            endTime: '11:00',
+            description: 'Assist with bathing, grooming, and dressing',
+        },
+        {
+            title: 'Lunch & Medication',
+            startTime: '12:30',
+            endTime: '13:30',
+            description: 'Assist with lunch and administer midday medication',
+        },
+        {
+            title: 'Afternoon Activities',
+            startTime: '15:00',
+            endTime: '16:00',
+            description: 'Light exercise and social activities',
+        },
+        {
+            title: 'Dinner & Medication',
+            startTime: '18:00',
+            endTime: '19:00',
+            description: 'Assist with dinner and administer evening medication',
+        },
+        {
+            title: 'Evening Care',
+            startTime: '20:00',
+            endTime: '21:00',
+            description: 'Prepare for bed and assist with nighttime routine',
+        },
     ];
     constructor(prisma) {
         this.prisma = prisma;
     }
     async createCareRequest(userId, dto) {
-        if (dto.careType === 'PART_TIME' && (!dto.careDays || dto.careDays.length === 0)) {
+        if (dto.careType === 'PART_TIME' &&
+            (!dto.careDays || dto.careDays.length === 0)) {
             throw new common_1.BadRequestException('careDays required for PART_TIME');
         }
         if (dto.careType === 'FULL_TIME' && dto.careDays?.length) {
@@ -43,7 +74,7 @@ let CareRequestService = class CareRequestService {
                     where: {
                         elderId: dto.elderId,
                         caregiverId: dto.caregiverId,
-                        status: 'PENDING'
+                        status: 'PENDING',
                     },
                 }),
             ]);
@@ -100,11 +131,19 @@ let CareRequestService = class CareRequestService {
         });
     }
     async createSchedulesForAcceptedRequest(tx, request) {
-        const days = request.careType === 'FULL_TIME' ? Object.values(create_care_request_dto_1.DayOfWeek) : request.careDays;
-        const schedules = await Promise.all(days.map(day => tx.schedule.create({
-            data: { elderId: request.elderId, careRequestId: request.id, day, start: '08:00', end: '21:00' },
+        const days = request.careType === 'FULL_TIME'
+            ? Object.values(create_care_request_dto_1.DayOfWeek)
+            : request.careDays;
+        const schedules = await Promise.all(days.map((day) => tx.schedule.create({
+            data: {
+                elderId: request.elderId,
+                careRequestId: request.id,
+                day,
+                start: '08:00',
+                end: '21:00',
+            },
         })));
-        const allScheduleItems = schedules.flatMap(schedule => this.defaultScheduleItems.map(item => ({
+        const allScheduleItems = schedules.flatMap((schedule) => this.defaultScheduleItems.map((item) => ({
             scheduleId: schedule.id,
             title: item.title,
             description: item.description,
@@ -121,15 +160,19 @@ let CareRequestService = class CareRequestService {
             include: {
                 family: true,
                 caregiver: true,
-            }
+            },
         });
         if (!user)
             throw new common_1.NotFoundException('User not found');
         if (user.role === 'FAMILY' && user.family) {
-            return this.prisma.careRequest.findMany({ where: { familyId: user.family.id } });
+            return this.prisma.careRequest.findMany({
+                where: { familyId: user.family.id },
+            });
         }
         else if (user.role === 'CAREGIVER' && user.caregiver) {
-            return this.prisma.careRequest.findMany({ where: { caregiverId: user.caregiver.id } });
+            return this.prisma.careRequest.findMany({
+                where: { caregiverId: user.caregiver.id },
+            });
         }
         return [];
     }
@@ -138,7 +181,7 @@ let CareRequestService = class CareRequestService {
             where: { id: requestId },
             include: {
                 caregiver: { include: { user: true } },
-                family: { include: { user: true } }
+                family: { include: { user: true } },
             },
         });
         if (!request)
@@ -199,66 +242,69 @@ let CareRequestService = class CareRequestService {
             data: { status: 'REJECTED', respondedAt: new Date() },
         });
     }
-    async removeCaregiverFromFamily(caregiverId, familyId, reason, actorId) {
+    async removeCaregiverFromFamily(caregiverId, elderId, reason, actorId) {
+        console.log(caregiverId, elderId);
         const caregiver = await this.prisma.caregiver.findUnique({
             where: { id: caregiverId },
-            include: { user: true }
+            include: { user: true },
         });
         if (!caregiver) {
             throw new common_1.NotFoundException('Caregiver not found');
         }
-        const family = await this.prisma.family.findUnique({
-            where: { id: familyId },
-            include: { user: true }
+        const elder = await this.prisma.elder.findUnique({
+            where: { id: elderId },
         });
-        if (!family) {
-            throw new common_1.NotFoundException('Family not found');
+        if (!elder) {
+            throw new common_1.NotFoundException('Elder not found');
         }
         const careRequests = await this.prisma.careRequest.findMany({
             where: {
                 caregiverId,
-                familyId,
-                status: { in: ['PENDING', 'ACCEPTED'] }
+                elderId,
+                status: { in: ['PENDING', 'ACCEPTED'] },
             },
             include: {
                 elder: true,
+                family: true,
                 schedules: {
                     include: {
-                        scheduleItems: true
-                    }
-                }
-            }
+                        scheduleItems: true,
+                    },
+                },
+            },
         });
         if (careRequests.length === 0) {
             throw new common_1.BadRequestException('No active care relationship found between this caregiver and family');
         }
+        const family = careRequests[0].family;
+        const familyId = family.id;
         return await this.prisma.$transaction(async (tx) => {
-            const allScheduleIds = careRequests.flatMap(request => request.schedules.map(schedule => schedule.id));
-            const allScheduleItemIds = careRequests.flatMap(request => request.schedules.flatMap(schedule => schedule.scheduleItems.map(item => item.id)));
+            const allScheduleIds = careRequests.flatMap((request) => request.schedules.map((schedule) => schedule.id));
+            const allScheduleItemIds = careRequests.flatMap((request) => request.schedules.flatMap((schedule) => schedule.scheduleItems.map((item) => item.id)));
             if (allScheduleItemIds.length > 0) {
                 await tx.scheduleItem.deleteMany({
                     where: {
-                        id: { in: allScheduleItemIds }
-                    }
+                        id: { in: allScheduleItemIds },
+                    },
                 });
             }
             if (allScheduleIds.length > 0) {
                 await tx.schedule.deleteMany({
                     where: {
-                        id: { in: allScheduleIds }
-                    }
+                        id: { in: allScheduleIds },
+                    },
                 });
             }
             const updatedRequests = await tx.careRequest.updateMany({
                 where: {
                     caregiverId,
-                    familyId,
-                    status: { in: ['PENDING', 'ACCEPTED'] }
+                    elderId,
+                    status: { in: ['PENDING', 'ACCEPTED'] },
                 },
                 data: {
                     status: 'CANCELLED',
-                    updatedAt: new Date()
-                }
+                    updatedAt: new Date(),
+                },
             });
             if (actorId) {
                 for (const request of careRequests) {
@@ -273,16 +319,16 @@ let CareRequestService = class CareRequestService {
                             metadata: {
                                 caregiverId,
                                 caregiverName: `${caregiver.firstName} ${caregiver.lastName}`,
-                                familyId,
+                                familyId: elder.familyId,
                                 familyName: family.familyName,
                                 elderId: request.elderId,
                                 elderName: `${request.elder.firstName} ${request.elder.lastName}`,
                                 reason,
                                 schedulesDeleted: request.schedules.length,
                                 scheduleItemsDeleted: request.schedules.reduce((total, schedule) => total + schedule.scheduleItems.length, 0),
-                                timestamp: new Date().toISOString()
-                            }
-                        }
+                                timestamp: new Date().toISOString(),
+                            },
+                        },
                     });
                 }
             }
@@ -292,16 +338,16 @@ let CareRequestService = class CareRequestService {
                     userId: caregiver.userId,
                     title: 'Care Relationship Ended',
                     message: `Your care relationship with ${family.familyName}'s family has been ended. ${reason ? `Reason: ${reason}` : ''}`,
-                    type: 'CARE_RELATIONSHIP_CHANGE'
-                }
+                    type: 'CARE_RELATIONSHIP_CHANGE',
+                },
             }));
             notificationPromises.push(tx.notification.create({
                 data: {
                     userId: family.userId,
                     title: 'Caregiver Removed',
                     message: `You have removed ${caregiver.firstName} ${caregiver.lastName} as a caregiver.`,
-                    type: 'CARE_RELATIONSHIP_CHANGE'
-                }
+                    type: 'CARE_RELATIONSHIP_CHANGE',
+                },
             }));
             await Promise.all(notificationPromises);
             return {
@@ -309,38 +355,50 @@ let CareRequestService = class CareRequestService {
                 details: {
                     caregiver: {
                         id: caregiverId,
-                        name: `${caregiver.firstName} ${caregiver.lastName}`
+                        name: `${caregiver.firstName} ${caregiver.lastName}`,
                     },
                     family: {
                         id: familyId,
-                        name: family.familyName
+                        name: family.familyName,
                     },
                     careRequestsCancelled: updatedRequests.count,
                     schedulesDeleted: allScheduleIds.length,
                     scheduleItemsDeleted: allScheduleItemIds.length,
-                    reason
-                }
+                    reason,
+                },
             };
         });
+    }
+    async removeFamilyFromCaregiver(caregiverUserId, familyId, reason, actorId) {
+        const caregiver = await this.prisma.caregiver.findUnique({
+            where: { userId: caregiverUserId },
+        });
+        if (!caregiver) {
+            throw new common_1.NotFoundException('Caregiver not found');
+        }
+        if (actorId && caregiver.userId !== actorId) {
+            throw new common_1.ForbiddenException('You are not allowed to remove this family');
+        }
+        return this.removeCaregiverFromFamily(caregiver.id, familyId, reason, actorId);
     }
     async getCaregiverRelationships(caregiverId) {
         return this.prisma.careRequest.findMany({
             where: {
                 caregiverId,
-                status: { in: ['PENDING', 'ACCEPTED'] }
+                status: { in: ['PENDING', 'ACCEPTED'] },
             },
             include: {
                 family: {
                     include: {
-                        user: true
-                    }
+                        user: true,
+                    },
                 },
                 elder: true,
-                schedules: true
+                schedules: true,
             },
             orderBy: {
-                requestedAt: 'desc'
-            }
+                requestedAt: 'desc',
+            },
         });
     }
     async cancelCareRequest(userId, requestId, reason) {
@@ -365,7 +423,9 @@ let CareRequestService = class CareRequestService {
                 throw new common_1.BadRequestException(`Cannot cancel a request with status: ${request.status}. ` +
                     `Only PENDING or ACCEPTED requests can be cancelled.`);
             }
-            if (request.status === 'PENDING' && request.expiresAt && request.expiresAt < new Date()) {
+            if (request.status === 'PENDING' &&
+                request.expiresAt &&
+                request.expiresAt < new Date()) {
                 await tx.careRequest.update({
                     where: { id: requestId },
                     data: {
@@ -401,13 +461,14 @@ let CareRequestService = class CareRequestService {
                         previousStatus: request.status,
                         cancelledBy: isRequester ? 'family' : 'caregiver',
                         familyName: request.family.familyName,
-                        caregiverName: request.caregiver ?
-                            `${request.caregiver.firstName} ${request.caregiver.lastName}` : 'Unknown',
+                        caregiverName: request.caregiver
+                            ? `${request.caregiver.firstName} ${request.caregiver.lastName}`
+                            : 'Unknown',
                         elderName: `${request.elder.firstName} ${request.elder.lastName}`,
                         reason: reason || null,
                         timestamp: new Date().toISOString(),
                     },
-                }
+                },
             });
             const notificationPromises = [];
             if (isRequester && request.caregiver?.userId) {
@@ -417,7 +478,7 @@ let CareRequestService = class CareRequestService {
                         title: 'Care Request Cancelled',
                         message: `${request.family.familyName} has cancelled the care request for ${request.elder.firstName}.`,
                         type: 'CARE_REQUEST_UPDATE',
-                    }
+                    },
                 }));
             }
             else if (isCaregiver && request.family.userId) {
@@ -427,7 +488,7 @@ let CareRequestService = class CareRequestService {
                         title: 'Care Request Cancelled',
                         message: `${request.caregiver.firstName} ${request.caregiver.lastName} has cancelled the care request for ${request.elder.firstName}.`,
                         type: 'CARE_REQUEST_UPDATE',
-                    }
+                    },
                 }));
             }
             if (notificationPromises.length > 0) {
@@ -463,7 +524,7 @@ let CareRequestService = class CareRequestService {
                     },
                 });
                 const adminUser = await tx.user.findFirst({
-                    where: { role: 'ADMIN' }
+                    where: { role: 'ADMIN' },
                 });
                 if (adminUser) {
                     await tx.activityLog.create({
@@ -479,11 +540,12 @@ let CareRequestService = class CareRequestService {
                                 expiredAt: new Date().toISOString(),
                                 originalExpiresAt: request.expiresAt?.toISOString(),
                                 familyName: request.family.familyName,
-                                caregiverName: request.caregiver ?
-                                    `${request.caregiver.firstName} ${request.caregiver.lastName}` : 'Unknown',
+                                caregiverName: request.caregiver
+                                    ? `${request.caregiver.firstName} ${request.caregiver.lastName}`
+                                    : 'Unknown',
                                 elderName: `${request.elder.firstName} ${request.elder.lastName}`,
                             },
-                        }
+                        },
                     });
                 }
                 await tx.notification.create({
@@ -492,7 +554,7 @@ let CareRequestService = class CareRequestService {
                         title: 'Request Expired',
                         message: `Your care request for ${request.elder.firstName} has expired without a response.`,
                         type: 'CARE_REQUEST_UPDATE',
-                    }
+                    },
                 });
                 return expiredRequest;
             });

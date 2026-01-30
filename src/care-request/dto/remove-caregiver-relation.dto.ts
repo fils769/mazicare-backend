@@ -8,3 +8,4 @@ export class RemoveCaregiverRelationDto {
   @IsOptional()
   reason?: string; 
 }
+

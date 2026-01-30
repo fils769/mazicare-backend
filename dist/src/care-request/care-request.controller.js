@@ -50,6 +50,10 @@ let CareRequestController = class CareRequestController {
         const actorId = req.user.id;
         return this.careRequestService.removeCaregiverFromFamily(caregiverId, removeDto.familyId, removeDto.reason, actorId);
     }
+    async removeFamilyFromCaregiver(caregiverId, removeDto, req) {
+        const actorId = req.user.id;
+        return this.careRequestService.removeFamilyFromCaregiver(caregiverId, removeDto.familyId, removeDto.reason, actorId);
+    }
     async cancel(id, req) {
         return this.careRequestService.cancelCareRequest(req.user.userId, id);
     }
@@ -156,6 +160,22 @@ __decorate([
     __metadata("design:paramtypes", [String, remove_caregiver_relation_dto_1.RemoveCaregiverRelationDto, Object]),
     __metadata("design:returntype", Promise)
 ], CareRequestController.prototype, "removeCaregiverFromFamily", null);
+__decorate([
+    (0, common_1.Delete)('caregiver/:caregiverId/family/remove'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Remove family from caregiver (end care relationship)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Relationship ended successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Caregiver or family not found' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'No active relationship found' }),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Param)('caregiverId')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, remove_caregiver_relation_dto_1.RemoveCaregiverRelationDto, Object]),
+    __metadata("design:returntype", Promise)
+], CareRequestController.prototype, "removeFamilyFromCaregiver", null);
 __decorate([
     (0, common_1.Delete)(':id/cancel'),
     (0, swagger_1.ApiOperation)({ summary: 'Cancel a care request' }),

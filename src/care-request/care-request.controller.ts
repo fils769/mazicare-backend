@@ -138,6 +138,30 @@ export class CareRequestController {
     );
   }
 
+@Delete('caregiver/:caregiverId/family/remove')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+@ApiOperation({ summary: 'Remove family from caregiver (end care relationship)' })
+@ApiResponse({ status: 200, description: 'Relationship ended successfully' })
+@ApiResponse({ status: 404, description: 'Caregiver or family not found' })
+@ApiResponse({ status: 400, description: 'No active relationship found' })
+@HttpCode(HttpStatus.OK)
+async removeFamilyFromCaregiver(
+  @Param('caregiverId') caregiverId: string,
+  @Body() removeDto: RemoveCaregiverRelationDto,
+  @Request() req
+) {
+  const actorId = req.user.id;
+
+  return this.careRequestService.removeFamilyFromCaregiver(
+    caregiverId,
+    removeDto.familyId,
+    removeDto.reason,
+    actorId
+  );
+}
+
+
   // Cancel a care request
 @Delete(':id/cancel')
 @ApiOperation({ summary: 'Cancel a care request' })
