@@ -765,6 +765,63 @@ export class CaregiverService {
   }
 
   // Update a schedule item if caregiver is assigned to the elder
+  // async updateScheduleItem(
+  //   userId: string,
+  //   itemId: string,
+  //   data: UpdateScheduleItemDto,
+  // ) {
+  //   const caregiver = await this.prisma.caregiver.findUnique({
+  //     where: { userId },
+  //     select: { id: true },
+  //   });
+
+  //   if (!caregiver) {
+  //     throw new NotFoundException('Caregiver profile not found');
+  //   }
+
+  //   const scheduleItem = await this.prisma.scheduleItem.findUnique({
+  //     where: { id: itemId },
+  //     include: {
+  //       schedule: {
+  //         include: {
+  //           elder: true,
+  //           careRequest: true, // include careRequest to validate assignment
+  //         },
+  //       },
+  //     },
+  //   });
+
+  //   if (!scheduleItem) {
+  //     throw new NotFoundException('Schedule item not found');
+  //   }
+
+  //   // Validate that this elder is assigned to this caregiver
+  //   const assigned = await this.prisma.careRequest.findFirst({
+  //     where: {
+  //       id: scheduleItem.schedule.careRequestId,
+  //       caregiverId: caregiver.id,
+  //       status: 'ACCEPTED',
+  //     },
+  //   });
+
+  //   if (!assigned) {
+  //     throw new ForbiddenException('You are not assigned to this elder');
+  //   }
+
+  //   return this.prisma.scheduleItem.update({
+  //     where: { id: itemId },
+  //     data: {
+  //       ...(data.title && { title: data.title }),
+  //       ...(data.description !== undefined && {
+  //         description: data.description,
+  //       }),
+  //       ...(data.startTime && { startTime: data.startTime }),
+  //       ...(data.endTime && { endTime: data.endTime }),
+  //       ...(data.status && { status: data.status }),
+  //     },
+  //   });
+  // }
+
   async updateScheduleItem(
     userId: string,
     itemId: string,
@@ -774,40 +831,38 @@ export class CaregiverService {
       where: { userId },
       select: { id: true },
     });
-
+  
     if (!caregiver) {
       throw new NotFoundException('Caregiver profile not found');
     }
-
+  
     const scheduleItem = await this.prisma.scheduleItem.findUnique({
       where: { id: itemId },
       include: {
-        schedule: {
-          include: {
-            elder: true,
-            careRequest: true, // include careRequest to validate assignment
-          },
-        },
+        schedule: true,
       },
     });
-
+  
     if (!scheduleItem) {
       throw new NotFoundException('Schedule item not found');
     }
-
-    // Validate that this elder is assigned to this caregiver
-    const assigned = await this.prisma.careRequest.findFirst({
-      where: {
-        id: scheduleItem.schedule.careRequestId,
-        caregiverId: caregiver.id,
-        status: 'ACCEPTED',
-      },
-    });
-
-    if (!assigned) {
-      throw new ForbiddenException('You are not assigned to this elder');
+  
+    if (scheduleItem.schedule.careRequestId) {
+      const assigned = await this.prisma.careRequest.findFirst({
+        where: {
+          id: scheduleItem.schedule.careRequestId,
+          caregiverId: caregiver.id,
+          status: 'ACCEPTED',
+        },
+      });
+  
+      if (!assigned) {
+        throw new ForbiddenException(
+          'You are not assigned to this schedule',
+        );
+      }
     }
-
+  
     return this.prisma.scheduleItem.update({
       where: { id: itemId },
       data: {
@@ -821,8 +876,51 @@ export class CaregiverService {
       },
     });
   }
+  
 
   // Update only the status of a schedule item
+  // async updateScheduleItemStatus(
+  //   userId: string,
+  //   itemId: string,
+  //   status: string,
+  // ) {
+  //   const caregiver = await this.prisma.caregiver.findUnique({
+  //     where: { userId },
+  //     select: { id: true },
+  //   });
+
+  //   if (!caregiver) {
+  //     throw new NotFoundException('Caregiver profile not found');
+  //   }
+
+  //   const scheduleItem = await this.prisma.scheduleItem.findUnique({
+  //     where: { id: itemId },
+  //     include: { schedule: true },
+  //   });
+
+  //   if (!scheduleItem) {
+  //     throw new NotFoundException('Schedule item not found');
+  //   }
+
+  //   // Validate caregiver assignment via CareRequest
+  //   const assigned = await this.prisma.careRequest.findFirst({
+  //     where: {
+  //       id: scheduleItem.schedule.careRequestId,
+  //       caregiverId: caregiver.id,
+  //       status: 'ACCEPTED',
+  //     },
+  //   });
+
+  //   if (!assigned) {
+  //     throw new ForbiddenException('You are not assigned to this elder');
+  //   }
+
+  //   return this.prisma.scheduleItem.update({
+  //     where: { id: itemId },
+  //     data: { status: status as any },
+  //   });
+  // }
+
   async updateScheduleItemStatus(
     userId: string,
     itemId: string,
@@ -832,39 +930,42 @@ export class CaregiverService {
       where: { userId },
       select: { id: true },
     });
-
+  
     if (!caregiver) {
       throw new NotFoundException('Caregiver profile not found');
     }
-
+  
     const scheduleItem = await this.prisma.scheduleItem.findUnique({
       where: { id: itemId },
       include: { schedule: true },
     });
-
+  
     if (!scheduleItem) {
       throw new NotFoundException('Schedule item not found');
     }
-
-    // Validate caregiver assignment via CareRequest
-    const assigned = await this.prisma.careRequest.findFirst({
-      where: {
-        id: scheduleItem.schedule.careRequestId,
-        caregiverId: caregiver.id,
-        status: 'ACCEPTED',
-      },
-    });
-
-    if (!assigned) {
-      throw new ForbiddenException('You are not assigned to this elder');
+  
+    if (scheduleItem.schedule.careRequestId) {
+      const assigned = await this.prisma.careRequest.findFirst({
+        where: {
+          id: scheduleItem.schedule.careRequestId,
+          caregiverId: caregiver.id,
+          status: 'ACCEPTED',
+        },
+      });
+  
+      if (!assigned) {
+        throw new ForbiddenException(
+          'You are not assigned to this schedule',
+        );
+      }
     }
-
+  
     return this.prisma.scheduleItem.update({
       where: { id: itemId },
       data: { status: status as any },
     });
   }
-
+  
   async getElderRequests(userId: string) {
     const caregiver = await this.prisma.caregiver.findUnique({
       where: { userId },

@@ -34,6 +34,7 @@ export declare class FamilyController {
         region: string | undefined;
         avatar: string | null;
         rating: number;
+        reviewCount: number;
         experience: string;
         monthlyRate: number;
         availability: string;

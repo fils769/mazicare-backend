@@ -348,7 +348,7 @@ model Notification {
 model Schedule {
   id            String    @id @default(cuid())
   elderId       String
-  careRequestId String
+  careRequestId String?
   day           DayOfWeek
   start         String
   end           String
@@ -357,7 +357,7 @@ model Schedule {
   updatedAt     DateTime  @updatedAt
 
   elder         Elder          @relation(fields: [elderId], references: [id], onDelete: Cascade)
-  careRequest   CareRequest    @relation("CareRequestSchedules", fields: [careRequestId], references: [id], onDelete: Cascade)
+  careRequest   CareRequest?    @relation("CareRequestSchedules", fields: [careRequestId], references: [id], onDelete: Cascade)
   scheduleItems ScheduleItem[]
 
   @@index([elderId])
@@ -505,6 +505,7 @@ model Review {
   caregiver Caregiver @relation("CaregiverReviews", fields: [caregiverId], references: [id])
   reviewer  User      @relation("UserReviews", fields: [reviewerId], references: [id])
 
+  @@unique([reviewerId, caregiverId])
   @@map("reviews")
 }
 

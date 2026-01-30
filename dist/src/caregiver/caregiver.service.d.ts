@@ -314,7 +314,7 @@ export declare class CaregiverService {
             day: import(".prisma/client").$Enums.DayOfWeek;
             start: string;
             end: string;
-            careRequestId: string;
+            careRequestId: string | null;
         })[];
     }[]>;
     getElderSchedules(userId: string, elderId: string): Promise<{
@@ -341,7 +341,7 @@ export declare class CaregiverService {
             day: import(".prisma/client").$Enums.DayOfWeek;
             start: string;
             end: string;
-            careRequestId: string;
+            careRequestId: string | null;
         })[];
     }>;
     updateScheduleItem(userId: string, itemId: string, data: UpdateScheduleItemDto): Promise<{

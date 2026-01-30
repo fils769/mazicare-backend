@@ -8,52 +8,132 @@ export class ScheduleService {
   constructor(private prisma: PrismaService) {}
 
  /* ------------------- CREATE FULL SCHEDULE ------------------- */
+// async createSchedule(elderId: string, data: CreateScheduleDto) {
+//   // Check if elder exists
+//   const elder = await this.prisma.elder.findUnique({
+//     where: { id: elderId },
+//     include: { careRequests: { where: { status: 'ACCEPTED' } } },
+//   });
+
+//   if (!elder) {
+//     throw new NotFoundException('Elder not found');
+//   }
+
+//   // if (!elder.careRequests || elder.careRequests.length === 0) {
+//   //   throw new BadRequestException(
+//   //     'Elder does not have an accepted caregiver assignment'
+//   //   );
+//   // }
+
+//   const createdDays: any[] = [];
+
+//   for (const dayData of data.schedules) {
+//     if (!dayData.scheduleItems || dayData.scheduleItems.length === 0) continue;
+
+//     // Check if schedule already exists for this day
+//     const existingSchedule = await this.prisma.schedule.findFirst({
+//       where: { elderId, day: dayData.day as DayOfWeek },
+//     });
+
+//     if (existingSchedule) {
+//       throw new BadRequestException(`Schedule already exists for ${dayData.day}`);
+//     }
+
+//     // Sort items to determine day start/end
+//     const sortedItems = dayData.scheduleItems.sort((a, b) =>
+//       a.startTime.localeCompare(b.startTime)
+//     );
+//     const dayStart = sortedItems[0].startTime;
+//     const dayEnd = sortedItems[sortedItems.length - 1].endTime;
+//     const acceptedCareRequest = elder.careRequests?.[0] ?? null;
+
+
+//     // Create Schedule with nested items
+//     const schedule = await this.prisma.schedule.create({
+//       data: {
+//         elderId,
+//         day: dayData.day as DayOfWeek,
+//         start: dayStart,
+//         end: dayEnd,
+//         careRequestId: elder.careRequests[0].id, // Include the required careRequestId
+//         scheduleItems: {
+//           create: dayData.scheduleItems.map((item) => ({
+//             title: item.title,
+//             description: item.description,
+//             startTime: item.startTime,
+//             endTime: item.endTime,
+//             status: item.status ?? ScheduleStatus.PENDING,
+//           })),
+//         },
+//       },
+//       include: { scheduleItems: true },
+//     });
+
+//     createdDays.push(schedule);
+//   }
+
+//   return createdDays;
+// }
 async createSchedule(elderId: string, data: CreateScheduleDto) {
-  // Check if elder exists
   const elder = await this.prisma.elder.findUnique({
     where: { id: elderId },
-    include: { careRequests: { where: { status: 'ACCEPTED' } } },
+    include: {
+      careRequests: { where: { status: 'ACCEPTED' } },
+    },
   });
 
   if (!elder) {
     throw new NotFoundException('Elder not found');
   }
 
-  if (!elder.careRequests || elder.careRequests.length === 0) {
-    throw new BadRequestException(
-      'Elder does not have an accepted caregiver assignment'
-    );
-  }
+  const acceptedCareRequest = elder.careRequests?.[0] ?? null;
 
-  const createdDays: any[] = [];
+  const createdDays: Array<{
+    id: string;
+    elderId: string;
+    day: DayOfWeek;
+    start: string;
+    end: string;
+    careRequestId: string | null;
+    scheduleItems: Array<{
+      id: string;
+      description: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+      status: ScheduleStatus;
+      title: string;
+      startTime: string;
+      endTime: string;
+      scheduleId: string;
+    }>;
+  }> = [];
 
   for (const dayData of data.schedules) {
-    if (!dayData.scheduleItems || dayData.scheduleItems.length === 0) continue;
+    if (!dayData.scheduleItems?.length) continue;
 
-    // Check if schedule already exists for this day
     const existingSchedule = await this.prisma.schedule.findFirst({
       where: { elderId, day: dayData.day as DayOfWeek },
     });
 
     if (existingSchedule) {
-      throw new BadRequestException(`Schedule already exists for ${dayData.day}`);
+      throw new BadRequestException(
+        `Schedule already exists for ${dayData.day}`
+      );
     }
 
-    // Sort items to determine day start/end
-    const sortedItems = dayData.scheduleItems.sort((a, b) =>
+    const sortedItems = [...dayData.scheduleItems].sort((a, b) =>
       a.startTime.localeCompare(b.startTime)
     );
-    const dayStart = sortedItems[0].startTime;
-    const dayEnd = sortedItems[sortedItems.length - 1].endTime;
 
-    // Create Schedule with nested items
     const schedule = await this.prisma.schedule.create({
       data: {
         elderId,
         day: dayData.day as DayOfWeek,
-        start: dayStart,
-        end: dayEnd,
-        careRequestId: elder.careRequests[0].id, // Include the required careRequestId
+        start: sortedItems[0].startTime,
+        end: sortedItems[sortedItems.length - 1].endTime,
+
+        careRequestId: acceptedCareRequest?.id ?? null,
+
         scheduleItems: {
           create: dayData.scheduleItems.map((item) => ({
             title: item.title,
@@ -72,6 +152,7 @@ async createSchedule(elderId: string, data: CreateScheduleDto) {
 
   return createdDays;
 }
+
 
 
 /* ------------------- UPDATE FULL SCHEDULE ------------------- */

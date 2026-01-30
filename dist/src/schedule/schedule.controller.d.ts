@@ -24,7 +24,7 @@ export declare class ScheduleController {
         day: import(".prisma/client").$Enums.DayOfWeek;
         start: string;
         end: string;
-        careRequestId: string;
+        careRequestId: string | null;
     })[]>;
     getWeeklySchedule(elderId: string): Promise<({
         scheduleItems: {
@@ -47,7 +47,7 @@ export declare class ScheduleController {
         day: import(".prisma/client").$Enums.DayOfWeek;
         start: string;
         end: string;
-        careRequestId: string;
+        careRequestId: string | null;
     })[]>;
     getDaySchedule(elderId: string, day: Day): Promise<({
         scheduleItems: {
@@ -70,7 +70,7 @@ export declare class ScheduleController {
         day: import(".prisma/client").$Enums.DayOfWeek;
         start: string;
         end: string;
-        careRequestId: string;
+        careRequestId: string | null;
     }) | null>;
     getElderSchedule(elderId: string): Promise<({
         scheduleItems: {
@@ -93,9 +93,27 @@ export declare class ScheduleController {
         day: import(".prisma/client").$Enums.DayOfWeek;
         start: string;
         end: string;
-        careRequestId: string;
+        careRequestId: string | null;
     })[]>;
-    createSchedule(elderId: string, scheduleData: CreateScheduleDto): Promise<any[]>;
+    createSchedule(elderId: string, scheduleData: CreateScheduleDto): Promise<{
+        id: string;
+        elderId: string;
+        day: import(".prisma/client").DayOfWeek;
+        start: string;
+        end: string;
+        careRequestId: string | null;
+        scheduleItems: {
+            id: string;
+            description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            status: import(".prisma/client").ScheduleStatus;
+            title: string;
+            startTime: string;
+            endTime: string;
+            scheduleId: string;
+        }[];
+    }[]>;
     updateSchedule(elderId: string, scheduleData: UpdateScheduleDto): Promise<any[]>;
     deleteSchedule(scheduleId: string): Promise<{
         id: string;
@@ -106,7 +124,7 @@ export declare class ScheduleController {
         day: import(".prisma/client").$Enums.DayOfWeek;
         start: string;
         end: string;
-        careRequestId: string;
+        careRequestId: string | null;
     }>;
     deleteAllDaySchedules(elderId: string, day: Day): Promise<import(".prisma/client").Prisma.BatchPayload>;
     updateItemStatus(itemId: string, statusData: UpdateItemStatusDto): Promise<{

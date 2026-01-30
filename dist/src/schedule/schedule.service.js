@@ -21,17 +21,17 @@ let ScheduleService = class ScheduleService {
     async createSchedule(elderId, data) {
         const elder = await this.prisma.elder.findUnique({
             where: { id: elderId },
-            include: { careRequests: { where: { status: 'ACCEPTED' } } },
+            include: {
+                careRequests: { where: { status: 'ACCEPTED' } },
+            },
         });
         if (!elder) {
             throw new common_1.NotFoundException('Elder not found');
         }
-        if (!elder.careRequests || elder.careRequests.length === 0) {
-            throw new common_1.BadRequestException('Elder does not have an accepted caregiver assignment');
-        }
+        const acceptedCareRequest = elder.careRequests?.[0] ?? null;
         const createdDays = [];
         for (const dayData of data.schedules) {
-            if (!dayData.scheduleItems || dayData.scheduleItems.length === 0)
+            if (!dayData.scheduleItems?.length)
                 continue;
             const existingSchedule = await this.prisma.schedule.findFirst({
                 where: { elderId, day: dayData.day },
@@ -39,16 +39,14 @@ let ScheduleService = class ScheduleService {
             if (existingSchedule) {
                 throw new common_1.BadRequestException(`Schedule already exists for ${dayData.day}`);
             }
-            const sortedItems = dayData.scheduleItems.sort((a, b) => a.startTime.localeCompare(b.startTime));
-            const dayStart = sortedItems[0].startTime;
-            const dayEnd = sortedItems[sortedItems.length - 1].endTime;
+            const sortedItems = [...dayData.scheduleItems].sort((a, b) => a.startTime.localeCompare(b.startTime));
             const schedule = await this.prisma.schedule.create({
                 data: {
                     elderId,
                     day: dayData.day,
-                    start: dayStart,
-                    end: dayEnd,
-                    careRequestId: elder.careRequests[0].id,
+                    start: sortedItems[0].startTime,
+                    end: sortedItems[sortedItems.length - 1].endTime,
+                    careRequestId: acceptedCareRequest?.id ?? null,
                     scheduleItems: {
                         create: dayData.scheduleItems.map((item) => ({
                             title: item.title,

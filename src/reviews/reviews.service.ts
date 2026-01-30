@@ -15,44 +15,86 @@ export class ReviewsService {
     async createReview(userId: string, dto: CreateReviewDto) {
         // 1. Check if caregiver exists
         const caregiver = await this.prisma.caregiver.findUnique({
-            where: { id: dto.caregiverId },
+          where: { id: dto.caregiverId },
         });
-
+      
         if (!caregiver) {
-            throw new NotFoundException('Caregiver not found');
+          throw new NotFoundException('Caregiver not found');
         }
-
-        // 2. Check if user is trying to review themselves (if they were a caregiver, but roles separation usually prevents this context, still good check)
+      
+        // 2. Prevent self-review
         if (caregiver.userId === userId) {
-            throw new BadRequestException('You cannot review yourself');
+          throw new BadRequestException('You cannot review yourself');
         }
-
-        // 3. Create Review
-        const review = await this.prisma.review.create({
-            data: {
-                reviewerId: userId,
-                caregiverId: dto.caregiverId,
-                rating: dto.rating,
-                comment: dto.comment,
-            },
-            include: {
-                reviewer: {
-                    select: {
-                        id: true,
-                        email: true,
-                        family: {
-                            select: {
-                                familyName: true,
-                                profilePicture: true,
-                            },
-                        },
-                    },
-                },
-            },
+      
+        // 3. Ensure user is a family member
+        const family = await this.prisma.family.findUnique({
+          where: { userId },
+          select: { id: true },
         });
-
+      
+        if (!family) {
+          throw new ForbiddenException('Only family members can review caregivers');
+        }
+      
+        // 4. Check if this family EVER worked with this caregiver
+        const workedTogether = await this.prisma.careRequest.findFirst({
+          where: {
+            caregiverId: dto.caregiverId,
+            status: 'ACCEPTED',
+            elder: {
+              familyId: family.id,
+            },
+          },
+        });
+      
+        if (!workedTogether) {
+          throw new ForbiddenException(
+            'You can only review caregivers you have worked with',
+          );
+        }
+      
+        const existingReview = await this.prisma.review.findFirst({
+            where: {
+              reviewerId: userId,
+              caregiverId: dto.caregiverId,
+            },
+          });
+          
+          if (existingReview) {
+            throw new BadRequestException({
+                key: 'reviews.alreadyReviewed',
+              });
+              
+          }
+          
+        // 5. Create review
+        const review = await this.prisma.review.create({
+          data: {
+            reviewerId: userId,
+            caregiverId: dto.caregiverId,
+            rating: dto.rating,
+            comment: dto.comment,
+          },
+          include: {
+            reviewer: {
+              select: {
+                id: true,
+                email: true,
+                family: {
+                  select: {
+                    familyName: true,
+                    profilePicture: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+      
         return review;
-    }
+      }
+      
 
     async getCaregiverReviews(caregiverId: string) {
         const reviews = await this.prisma.review.findMany({

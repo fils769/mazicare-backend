@@ -637,26 +637,23 @@ let CaregiverService = class CaregiverService {
         const scheduleItem = await this.prisma.scheduleItem.findUnique({
             where: { id: itemId },
             include: {
-                schedule: {
-                    include: {
-                        elder: true,
-                        careRequest: true,
-                    },
-                },
+                schedule: true,
             },
         });
         if (!scheduleItem) {
             throw new common_1.NotFoundException('Schedule item not found');
         }
-        const assigned = await this.prisma.careRequest.findFirst({
-            where: {
-                id: scheduleItem.schedule.careRequestId,
-                caregiverId: caregiver.id,
-                status: 'ACCEPTED',
-            },
-        });
-        if (!assigned) {
-            throw new common_1.ForbiddenException('You are not assigned to this elder');
+        if (scheduleItem.schedule.careRequestId) {
+            const assigned = await this.prisma.careRequest.findFirst({
+                where: {
+                    id: scheduleItem.schedule.careRequestId,
+                    caregiverId: caregiver.id,
+                    status: 'ACCEPTED',
+                },
+            });
+            if (!assigned) {
+                throw new common_1.ForbiddenException('You are not assigned to this schedule');
+            }
         }
         return this.prisma.scheduleItem.update({
             where: { id: itemId },
@@ -686,15 +683,17 @@ let CaregiverService = class CaregiverService {
         if (!scheduleItem) {
             throw new common_1.NotFoundException('Schedule item not found');
         }
-        const assigned = await this.prisma.careRequest.findFirst({
-            where: {
-                id: scheduleItem.schedule.careRequestId,
-                caregiverId: caregiver.id,
-                status: 'ACCEPTED',
-            },
-        });
-        if (!assigned) {
-            throw new common_1.ForbiddenException('You are not assigned to this elder');
+        if (scheduleItem.schedule.careRequestId) {
+            const assigned = await this.prisma.careRequest.findFirst({
+                where: {
+                    id: scheduleItem.schedule.careRequestId,
+                    caregiverId: caregiver.id,
+                    status: 'ACCEPTED',
+                },
+            });
+            if (!assigned) {
+                throw new common_1.ForbiddenException('You are not assigned to this schedule');
+            }
         }
         return this.prisma.scheduleItem.update({
             where: { id: itemId },

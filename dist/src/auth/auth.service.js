@@ -147,9 +147,6 @@ let AuthService = class AuthService {
         if (!otpRecord) {
             throw new common_1.BadRequestException('Invalid or expired OTP');
         }
-        await this.prisma.otp.delete({
-            where: { id: otpRecord.id },
-        });
         return {
             message: 'OTP verified successfully. You can now reset your password.',
         };

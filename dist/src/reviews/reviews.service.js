@@ -27,6 +27,36 @@ let ReviewsService = class ReviewsService {
         if (caregiver.userId === userId) {
             throw new common_1.BadRequestException('You cannot review yourself');
         }
+        const family = await this.prisma.family.findUnique({
+            where: { userId },
+            select: { id: true },
+        });
+        if (!family) {
+            throw new common_1.ForbiddenException('Only family members can review caregivers');
+        }
+        const workedTogether = await this.prisma.careRequest.findFirst({
+            where: {
+                caregiverId: dto.caregiverId,
+                status: 'ACCEPTED',
+                elder: {
+                    familyId: family.id,
+                },
+            },
+        });
+        if (!workedTogether) {
+            throw new common_1.ForbiddenException('You can only review caregivers you have worked with');
+        }
+        const existingReview = await this.prisma.review.findFirst({
+            where: {
+                reviewerId: userId,
+                caregiverId: dto.caregiverId,
+            },
+        });
+        if (existingReview) {
+            throw new common_1.BadRequestException({
+                key: 'reviews.alreadyReviewed',
+            });
+        }
         const review = await this.prisma.review.create({
             data: {
                 reviewerId: userId,

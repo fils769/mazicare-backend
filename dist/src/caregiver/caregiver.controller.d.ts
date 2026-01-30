@@ -245,7 +245,7 @@ export declare class CaregiverController {
             day: import(".prisma/client").$Enums.DayOfWeek;
             start: string;
             end: string;
-            careRequestId: string;
+            careRequestId: string | null;
         })[];
     }>;
     getMyRating(req: any): Promise<{
@@ -281,7 +281,7 @@ export declare class CaregiverController {
             day: import(".prisma/client").$Enums.DayOfWeek;
             start: string;
             end: string;
-            careRequestId: string;
+            careRequestId: string | null;
         })[];
     }[]>;
     updateScheduleItem(req: any, itemId: string, data: UpdateScheduleItemDto): Promise<{

@@ -176,22 +176,23 @@ let FamilyService = class FamilyService {
             where: {
                 onboardingComplete: true,
                 ...(filters.region && { region: filters.region }),
-                ...(filters.genderPreference && { gender: filters.genderPreference })
+                ...(filters.genderPreference && { gender: filters.genderPreference }),
             },
             include: {
                 user: {
-                    select: { id: true, email: true }
+                    select: { id: true, email: true },
                 },
                 caregiverRegion: true,
                 reviews: {
-                    select: { rating: true }
-                }
-            }
+                    select: { rating: true },
+                },
+            },
         });
-        return caregivers.map(caregiver => {
-            const avgRating = caregiver.reviews.length > 0
-                ? caregiver.reviews.reduce((sum, review) => sum + review.rating, 0) / caregiver.reviews.length
-                : 4.5;
+        return caregivers.map((caregiver) => {
+            const reviewCount = caregiver.reviews.length;
+            const avgRating = reviewCount > 0
+                ? caregiver.reviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount
+                : 0;
             return {
                 id: caregiver.id,
                 userId: caregiver.user.id,
@@ -200,12 +201,13 @@ let FamilyService = class FamilyService {
                 phone: caregiver.phone,
                 region: caregiver.caregiverRegion?.name,
                 avatar: caregiver.profilePicture,
-                rating: avgRating,
+                rating: Number(avgRating.toFixed(1)),
+                reviewCount,
                 experience: `${caregiver.experience || 2}+ years`,
                 monthlyRate: Math.floor(Math.random() * 2000) + 1000,
                 availability: 'Full-time',
                 specialties: ['Elder Care', 'Disability Support'],
-                distance: '2.5 km'
+                distance: '2.5 km',
             };
         });
     }
