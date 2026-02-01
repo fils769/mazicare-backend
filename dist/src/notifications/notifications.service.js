@@ -42,6 +42,30 @@ let NotificationsService = class NotificationsService {
             },
         });
     }
+    async deleteNotification(userId, notificationId) {
+        return this.prisma.notification.delete({
+            where: {
+                id: notificationId,
+                userId,
+            },
+        });
+    }
+    async deleteAllNotifications(userId) {
+        console.log(userId);
+        return this.prisma.notification.deleteMany({
+            where: {
+                userId,
+            },
+        });
+    }
+    async markAllAsRead(userId) {
+        return this.prisma.notification.updateMany({
+            where: {
+                userId,
+            },
+            data: { read: true },
+        });
+    }
 };
 exports.NotificationsService = NotificationsService;
 exports.NotificationsService = NotificationsService = __decorate([

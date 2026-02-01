@@ -1,4 +1,5 @@
 import { NotificationsService } from './notifications.service';
+import { NotificationsGateway } from './notifications.gateway';
 type SubscriptionRenewedEvent = {
     userId: string;
     planName: string;
@@ -33,8 +34,9 @@ type MessageReceivedEvent = {
 };
 export declare class NotificationListeners {
     private readonly notificationsService;
+    private readonly notificationsGateway;
     private readonly logger;
-    constructor(notificationsService: NotificationsService);
+    constructor(notificationsService: NotificationsService, notificationsGateway: NotificationsGateway);
     handleSubscriptionRenewed(event: SubscriptionRenewedEvent): Promise<void>;
     handleMessageReceived(event: MessageReceivedEvent): Promise<void>;
 }

@@ -370,6 +370,7 @@ let CaregiverService = class CaregiverService {
                 careType: 'FULL_TIME',
             },
         });
+        console.log("create notification called.");
         await this.prisma.notification.create({
             data: {
                 userId: caregiverData.userId,
@@ -776,7 +777,7 @@ let CaregiverService = class CaregiverService {
                 },
             },
         });
-        return families.map(family => ({
+        return families.map((family) => ({
             id: family.id,
             userId: family.user.id,
             name: family.familyName || 'Family',
@@ -788,12 +789,237 @@ let CaregiverService = class CaregiverService {
             language: family.language,
             careTypes: family.careTypes,
             elderCount: family.elders.length,
-            elders: family.elders.map(elder => ({
+            elders: family.elders.map((elder) => ({
                 id: elder.id,
                 name: `${elder.firstName} ${elder.lastName}`,
                 hasCaregiver: elder.careRequests.length > 0,
             })),
         }));
+    }
+    async getActivity(userId, period) {
+        console.log('--- getActivity called ---');
+        console.log('Received userId:', userId);
+        console.log('Received period:', period);
+        const caregiver = await this.prisma.caregiver.findUnique({
+            where: { userId },
+        });
+        if (!caregiver) {
+            throw new common_1.NotFoundException('Caregiver not found');
+        }
+        console.log('Fetched caregiver from DB:', caregiver);
+        const nowUTC = new Date();
+        let startDateUTC;
+        let periodLabel = '';
+        const todayStartUTC = new Date(Date.UTC(nowUTC.getUTCFullYear(), nowUTC.getUTCMonth(), nowUTC.getUTCDate(), 0, 0, 0, 0));
+        switch (period) {
+            case 'today':
+                startDateUTC = todayStartUTC;
+                periodLabel = 'Today';
+                break;
+            case '7d':
+                startDateUTC = new Date(todayStartUTC);
+                startDateUTC.setUTCDate(startDateUTC.getUTCDate() - 7);
+                periodLabel = 'Last 7 Days';
+                break;
+            case '30d':
+                startDateUTC = new Date(todayStartUTC);
+                startDateUTC.setUTCDate(startDateUTC.getUTCDate() - 30);
+                periodLabel = 'Last 30 Days';
+                break;
+            case '90d':
+                startDateUTC = new Date(todayStartUTC);
+                startDateUTC.setUTCDate(startDateUTC.getUTCDate() - 90);
+                periodLabel = 'Last 90 Days';
+                break;
+            default:
+                startDateUTC = todayStartUTC;
+                periodLabel = 'Today';
+        }
+        console.log('Start date (UTC):', startDateUTC.toISOString());
+        console.log('Now (UTC):', nowUTC.toISOString());
+        console.log('Period label:', periodLabel);
+        const allScheduleItems = await this.prisma.scheduleItem.findMany({
+            where: {
+                schedule: { careRequest: { caregiverId: caregiver.id } },
+                updatedAt: {
+                    gte: startDateUTC,
+                    lte: nowUTC,
+                },
+            },
+            include: {
+                schedule: {
+                    include: {
+                        elder: { select: { id: true, firstName: true, lastName: true } },
+                    },
+                },
+            },
+            orderBy: { updatedAt: 'desc' },
+        });
+        console.log('Total schedule items fetched:', allScheduleItems.length);
+        console.log('Query range:', {
+            start: startDateUTC.toISOString(),
+            end: nowUTC.toISOString(),
+            itemsFound: allScheduleItems.length,
+        });
+        if (allScheduleItems.length > 0) {
+            console.log('Sample items:');
+            allScheduleItems.slice(0, 3).forEach((item) => {
+                console.log(`- ${item.id}: ${item.updatedAt.toISOString()} - ${item.status}`);
+            });
+        }
+        const activeCareRequests = await this.prisma.careRequest.findMany({
+            where: {
+                caregiverId: caregiver.id,
+                status: 'ACCEPTED',
+            },
+            include: {
+                elder: {
+                    include: {
+                        program: { select: { name: true, description: true } },
+                    },
+                },
+                schedules: {
+                    include: {
+                        scheduleItems: true,
+                    },
+                },
+            },
+        });
+        console.log('Active care requests:', activeCareRequests.length);
+        const activeElders = await Promise.all(activeCareRequests.map(async (request) => {
+            const elder = request.elder;
+            const currentTimeLocal = new Date()
+                .toLocaleTimeString('en-US', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+            })
+                .substring(0, 5);
+            const upcomingTasks = await this.prisma.scheduleItem.findMany({
+                where: {
+                    schedule: { elderId: elder.id, careRequestId: request.id },
+                    status: { in: ['ACTIVE', 'PENDING'] },
+                    startTime: { gte: currentTimeLocal },
+                },
+                include: { schedule: { select: { day: true } } },
+                orderBy: { startTime: 'asc' },
+                take: 3,
+            });
+            const weekAgoUTC = new Date(todayStartUTC);
+            weekAgoUTC.setUTCDate(weekAgoUTC.getUTCDate() - 7);
+            const recentCompleted = await this.prisma.scheduleItem.count({
+                where: {
+                    schedule: { elderId: elder.id, careRequestId: request.id },
+                    status: 'COMPLETED',
+                    updatedAt: { gte: weekAgoUTC },
+                },
+            });
+            const elderSchedules = await this.prisma.schedule.findMany({
+                where: {
+                    elderId: elder.id,
+                    careRequestId: request.id,
+                    status: 'ACTIVE',
+                },
+            });
+            const activeDays = elderSchedules.map((s) => s.day);
+            const weeklyHours = elderSchedules.reduce((sum, s) => {
+                const start = parseInt(s.start.split(':')[0]);
+                const end = parseInt(s.end.split(':')[0]);
+                return sum + (end - start);
+            }, 0);
+            const calculateAge = (birthDate) => {
+                const today = new Date();
+                const birth = new Date(birthDate);
+                let age = today.getFullYear() - birth.getFullYear();
+                const monthDiff = today.getMonth() - birth.getMonth();
+                if (monthDiff < 0 ||
+                    (monthDiff === 0 && today.getDate() < birth.getDate()))
+                    age--;
+                return age;
+            };
+            console.log('Processed elder:', elder.firstName, elder.lastName);
+            return {
+                id: elder.id,
+                firstName: elder.firstName,
+                lastName: elder.lastName,
+                fullName: `${elder.firstName} ${elder.lastName}`,
+                age: calculateAge(elder.dateOfBirth),
+                gender: elder.gender,
+                profilePicture: elder.profilePicture,
+                program: elder.program
+                    ? {
+                        name: elder.program.name,
+                        description: elder.program.description,
+                    }
+                    : null,
+                activeDays: [...new Set(activeDays)],
+                weeklyHours,
+                upcomingTasks: upcomingTasks.map((t) => ({
+                    id: t.id,
+                    title: t.title,
+                    startTime: t.startTime,
+                    endTime: t.endTime,
+                    status: t.status,
+                    scheduleDay: t.schedule.day,
+                })),
+                stats: {
+                    recentCompleted,
+                    totalSchedules: elderSchedules.length,
+                    totalUpcomingTasks: upcomingTasks.length,
+                    completionRate: recentCompleted > 0
+                        ? Math.min(100, Math.round((recentCompleted /
+                            (recentCompleted + upcomingTasks.length)) *
+                            100))
+                        : 0,
+                },
+                careRequestId: request.id,
+                joinedDate: elder.createdAt,
+            };
+        }));
+        console.log('Total active elders processed:', activeElders.length);
+        const completedItems = allScheduleItems.filter((i) => i.status === 'COMPLETED');
+        const pendingItems = allScheduleItems.filter((i) => i.status === 'PENDING');
+        const activeItems = allScheduleItems.filter((i) => i.status === 'ACTIVE');
+        const taskSummary = {
+            total: allScheduleItems.length,
+            completed: completedItems.length,
+            pending: pendingItems.length,
+            active: activeItems.length,
+            completionRate: allScheduleItems.length
+                ? Math.round((completedItems.length / allScheduleItems.length) * 100)
+                : 0,
+        };
+        console.log('Completed items:', completedItems.length, 'Pending items:', pendingItems.length, 'Active items:', activeItems.length);
+        console.log('Task summary:', taskSummary);
+        const overallStats = {
+            totalElders: activeElders.length,
+            totalTasks: taskSummary.total,
+            completedTasks: taskSummary.completed,
+            pendingTasks: taskSummary.pending,
+            activeTasks: taskSummary.active,
+            avgCompletionRate: activeElders.length > 0
+                ? Math.round(activeElders.reduce((sum, e) => sum + e.stats.completionRate, 0) /
+                    activeElders.length)
+                : 0,
+            totalWeeklyHours: activeElders.reduce((sum, e) => sum + e.weeklyHours, 0),
+        };
+        return {
+            period,
+            periodLabel,
+            overallStats,
+            activeElders: {
+                count: activeElders.length,
+                list: activeElders,
+                summary: {
+                    totalWeeklyHours: overallStats.totalWeeklyHours,
+                    avgCompletionRate: overallStats.avgCompletionRate,
+                    eldersWithUpcomingTasks: activeElders.filter((e) => e.upcomingTasks.length > 0).length,
+                },
+            },
+            tasks: {
+                summary: taskSummary,
+            },
+        };
     }
 };
 exports.CaregiverService = CaregiverService;

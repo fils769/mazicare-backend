@@ -88,7 +88,7 @@ let CareRequestService = class CareRequestService {
                 throw new common_1.NotFoundException('Caregiver not found');
             if (duplicatePending)
                 throw new common_1.ConflictException('Pending request already exists');
-            return tx.careRequest.create({
+            const careRequest = await tx.careRequest.create({
                 data: {
                     elderId: elder.id,
                     caregiverId: caregiver.id,
@@ -98,13 +98,43 @@ let CareRequestService = class CareRequestService {
                     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
                 },
             });
+            await tx.activityLog.create({
+                data: {
+                    userId,
+                    actorRole: 'FAMILY',
+                    category: 'USER_ACTIVITY',
+                    eventType: 'CARE_REQUEST_CREATED',
+                    entityType: 'CareRequest',
+                    entityId: careRequest.id,
+                    metadata: {
+                        elderId: elder.id,
+                        elderName: `${elder.firstName} ${elder.lastName}`,
+                        caregiverId: caregiver.id,
+                        careType: dto.careType,
+                        careDays: dto.careDays ?? [],
+                        timestamp: new Date().toISOString(),
+                    },
+                },
+            });
+            await tx.notification.create({
+                data: {
+                    userId: caregiver.userId,
+                    title: 'New Care Request',
+                    message: `${family.familyName} has sent you a care request for ${elder.firstName}.`,
+                    type: 'CARE_REQUEST_UPDATE',
+                },
+            });
+            return careRequest;
         });
     }
     async acceptCareRequest(userId, requestId) {
         return this.prisma.$transaction(async (tx) => {
             const request = await tx.careRequest.findUnique({
                 where: { id: requestId },
-                include: { caregiver: true },
+                include: {
+                    family: { include: { user: true } },
+                    caregiver: true,
+                },
             });
             if (!request)
                 throw new common_1.NotFoundException();
@@ -127,32 +157,76 @@ let CareRequestService = class CareRequestService {
                 }),
             ]);
             await this.createSchedulesForAcceptedRequest(tx, request);
+            await tx.activityLog.create({
+                data: {
+                    userId,
+                    actorRole: 'CAREGIVER',
+                    category: 'USER_ACTIVITY',
+                    eventType: 'CARE_REQUEST_ACCEPTED',
+                    entityType: 'CareRequest',
+                    entityId: request.id,
+                    metadata: {
+                        elderId: request.elderId,
+                        caregiverId: request.caregiverId,
+                        timestamp: new Date().toISOString(),
+                    },
+                },
+            });
+            await tx.notification.create({
+                data: {
+                    userId: request.family.userId,
+                    title: 'Care Request Accepted',
+                    message: `Your care request has been accepted.`,
+                    type: 'CARE_REQUEST_UPDATE',
+                },
+            });
             return acceptedRequest;
         });
     }
     async createSchedulesForAcceptedRequest(tx, request) {
         const days = request.careType === 'FULL_TIME'
-            ? Object.values(create_care_request_dto_1.DayOfWeek)
+            ? [
+                create_care_request_dto_1.DayOfWeek.MONDAY,
+                create_care_request_dto_1.DayOfWeek.TUESDAY,
+                create_care_request_dto_1.DayOfWeek.WEDNESDAY,
+                create_care_request_dto_1.DayOfWeek.THURSDAY,
+                create_care_request_dto_1.DayOfWeek.FRIDAY,
+                create_care_request_dto_1.DayOfWeek.SATURDAY,
+                create_care_request_dto_1.DayOfWeek.SUNDAY,
+            ]
             : request.careDays;
-        const schedules = await Promise.all(days.map((day) => tx.schedule.create({
-            data: {
-                elderId: request.elderId,
-                careRequestId: request.id,
-                day,
-                start: '08:00',
-                end: '21:00',
-            },
-        })));
-        const allScheduleItems = schedules.flatMap((schedule) => this.defaultScheduleItems.map((item) => ({
-            scheduleId: schedule.id,
-            title: item.title,
-            description: item.description,
-            startTime: item.startTime,
-            endTime: item.endTime,
-        })));
-        await tx.scheduleItem.createMany({
-            data: allScheduleItems,
-        });
+        for (const day of days) {
+            const existingSchedule = await tx.schedule.findFirst({
+                where: {
+                    elderId: request.elderId,
+                    day,
+                },
+            });
+            if (existingSchedule)
+                continue;
+            const scheduleItems = this.defaultScheduleItems;
+            if (!scheduleItems.length)
+                continue;
+            const sortedItems = [...scheduleItems].sort((a, b) => a.startTime.localeCompare(b.startTime));
+            await tx.schedule.create({
+                data: {
+                    elderId: request.elderId,
+                    careRequestId: request.id,
+                    day,
+                    start: sortedItems[0].startTime,
+                    end: sortedItems[sortedItems.length - 1].endTime,
+                    scheduleItems: {
+                        create: sortedItems.map((item) => ({
+                            title: item.title,
+                            description: item.description,
+                            startTime: item.startTime,
+                            endTime: item.endTime,
+                            status: client_1.ScheduleStatus.PENDING,
+                        })),
+                    },
+                },
+            });
+        }
     }
     async findAllForUser(userId) {
         const user = await this.prisma.user.findUnique({
@@ -204,7 +278,7 @@ let CareRequestService = class CareRequestService {
             throw new common_1.BadRequestException('Cannot update non-pending request');
         if (request.family.userId !== userId)
             throw new common_1.ForbiddenException();
-        return this.prisma.careRequest.update({
+        const updated = await this.prisma.careRequest.update({
             where: { id: requestId },
             data: {
                 careType: dto.careType ?? request.careType,
@@ -212,6 +286,21 @@ let CareRequestService = class CareRequestService {
                 status: dto.status ?? request.status,
             },
         });
+        await this.prisma.activityLog.create({
+            data: {
+                userId,
+                actorRole: 'FAMILY',
+                category: 'USER_ACTIVITY',
+                eventType: 'CARE_REQUEST_UPDATED',
+                entityType: 'CareRequest',
+                entityId: request.id,
+                metadata: {
+                    updatedFields: Object.keys(dto),
+                    timestamp: new Date().toISOString(),
+                },
+            },
+        });
+        return updated;
     }
     async remove(userId, requestId) {
         const request = await this.prisma.careRequest.findUnique({
@@ -224,12 +313,35 @@ let CareRequestService = class CareRequestService {
             throw new common_1.BadRequestException('Cannot delete non-pending request');
         if (request.family.userId !== userId)
             throw new common_1.ForbiddenException();
+        await this.prisma.activityLog.create({
+            data: {
+                userId,
+                actorRole: 'FAMILY',
+                category: 'USER_ACTIVITY',
+                eventType: 'CARE_REQUEST_DELETED',
+                entityType: 'CareRequest',
+                entityId: request.id,
+                metadata: {
+                    timestamp: new Date().toISOString(),
+                },
+            },
+        });
+        await this.prisma.notification.create({
+            data: {
+                userId: request.caregiverId,
+                title: 'Care Request Deleted',
+                message: `A care request for ${request.elderId} has been deleted.`,
+                type: 'CARE_REQUEST_UPDATE',
+            },
+        });
         return this.prisma.careRequest.delete({ where: { id: requestId } });
     }
     async rejectCareRequest(userId, requestId) {
         const request = await this.prisma.careRequest.findUnique({
             where: { id: requestId },
-            include: { caregiver: true },
+            include: { caregiver: true,
+                family: { include: { user: true } },
+            },
         });
         if (!request)
             throw new common_1.NotFoundException('Care request not found');
@@ -237,10 +349,34 @@ let CareRequestService = class CareRequestService {
             throw new common_1.ForbiddenException();
         if (request.status !== 'PENDING')
             throw new common_1.BadRequestException('Request not pending');
-        return this.prisma.careRequest.update({
+        const rejected = await this.prisma.careRequest.update({
             where: { id: requestId },
             data: { status: 'REJECTED', respondedAt: new Date() },
         });
+        await this.prisma.activityLog.create({
+            data: {
+                userId,
+                actorRole: 'CAREGIVER',
+                category: 'USER_ACTIVITY',
+                eventType: 'CARE_REQUEST_REJECTED',
+                entityType: 'CareRequest',
+                entityId: request.id,
+                metadata: {
+                    elderId: request.elderId,
+                    caregiverId: request.caregiverId,
+                    timestamp: new Date().toISOString(),
+                },
+            },
+        });
+        await this.prisma.notification.create({
+            data: {
+                userId: request.family.userId,
+                title: 'Care Request Rejected',
+                message: `Your care request has been rejected.`,
+                type: 'CARE_REQUEST_UPDATE',
+            },
+        });
+        return rejected;
     }
     async removeCaregiverFromFamily(caregiverId, elderId, reason, actorId) {
         console.log(caregiverId, elderId);

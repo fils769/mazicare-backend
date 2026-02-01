@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { RenewSubscriptionDto } from './dto/subscription.dto';
 
 @Injectable()
 export class SubscriptionService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) { }
 
   async getSubscription(userId: string) {
     const subscription = await this.prisma.subscription.findUnique({
@@ -52,6 +56,13 @@ export class SubscriptionService {
         price: plan.price,
         status: 'ACTIVE'
       }
+    });
+
+    // Emit event for notification
+    this.eventEmitter.emit('subscription.renewed', {
+      userId,
+      planName: plan.name,
+      subscription,
     });
 
     return {

@@ -14,20 +14,25 @@ exports.NotificationListeners = void 0;
 const common_1 = require("@nestjs/common");
 const event_emitter_1 = require("@nestjs/event-emitter");
 const notifications_service_1 = require("./notifications.service");
+const notifications_gateway_1 = require("./notifications.gateway");
 let NotificationListeners = NotificationListeners_1 = class NotificationListeners {
     notificationsService;
+    notificationsGateway;
     logger = new common_1.Logger(NotificationListeners_1.name);
-    constructor(notificationsService) {
+    constructor(notificationsService, notificationsGateway) {
         this.notificationsService = notificationsService;
+        this.notificationsGateway = notificationsGateway;
     }
     async handleSubscriptionRenewed(event) {
         try {
-            await this.notificationsService.createNotification(event.userId, {
+            const notification = await this.notificationsService.createNotification(event.userId, {
                 recipientId: event.userId,
                 title: 'Subscription Renewed',
                 message: `Your ${event.planName} plan is active until ${new Date(event.subscription.endDate).toLocaleDateString()}.`,
                 type: 'SUBSCRIPTION',
             });
+            this.notificationsGateway.sendNotificationToUser(event.userId, notification);
+            this.logger.log(`Subscription renewal notification sent to user ${event.userId}`);
         }
         catch (error) {
             this.logger.error('Failed to create subscription renewal notification', error instanceof Error ? error.stack : error);
@@ -39,12 +44,14 @@ let NotificationListeners = NotificationListeners_1 = class NotificationListener
             return;
         }
         try {
-            await this.notificationsService.createNotification(message.recipientId, {
+            const notification = await this.notificationsService.createNotification(message.recipientId, {
                 recipientId: message.recipientId,
                 title: `New message from ${message.sender?.email ?? 'a user'}`,
                 message: message.content,
                 type: 'MESSAGE',
             });
+            this.notificationsGateway.sendNotificationToUser(message.recipientId, notification);
+            this.logger.log(`Message notification sent to user ${message.recipientId}`);
         }
         catch (error) {
             this.logger.error('Failed to create message notification', error instanceof Error ? error.stack : error);
@@ -66,6 +73,7 @@ __decorate([
 ], NotificationListeners.prototype, "handleMessageReceived", null);
 exports.NotificationListeners = NotificationListeners = NotificationListeners_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [notifications_service_1.NotificationsService])
+    __metadata("design:paramtypes", [notifications_service_1.NotificationsService,
+        notifications_gateway_1.NotificationsGateway])
 ], NotificationListeners);
 //# sourceMappingURL=notification.listeners.js.map

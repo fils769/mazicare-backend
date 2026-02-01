@@ -8,19 +8,36 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationsModule = void 0;
 const common_1 = require("@nestjs/common");
-const event_emitter_1 = require("@nestjs/event-emitter");
+const jwt_1 = require("@nestjs/jwt");
+const config_1 = require("@nestjs/config");
 const notifications_controller_1 = require("./notifications.controller");
 const notifications_service_1 = require("./notifications.service");
 const prisma_service_1 = require("../prisma/prisma.service");
 const notification_listeners_1 = require("./notification.listeners");
+const notifications_gateway_1 = require("./notifications.gateway");
 let NotificationsModule = class NotificationsModule {
 };
 exports.NotificationsModule = NotificationsModule;
 exports.NotificationsModule = NotificationsModule = __decorate([
     (0, common_1.Module)({
-        imports: [event_emitter_1.EventEmitterModule.forRoot()],
+        imports: [
+            config_1.ConfigModule,
+            jwt_1.JwtModule.registerAsync({
+                imports: [config_1.ConfigModule],
+                useFactory: async (configService) => ({
+                    secret: configService.get('JWT_SECRET') || 'fallback-secret',
+                }),
+                inject: [config_1.ConfigService],
+            }),
+        ],
         controllers: [notifications_controller_1.NotificationsController],
-        providers: [notifications_service_1.NotificationsService, prisma_service_1.PrismaService, notification_listeners_1.NotificationListeners],
+        providers: [
+            notifications_service_1.NotificationsService,
+            prisma_service_1.PrismaService,
+            notification_listeners_1.NotificationListeners,
+            notifications_gateway_1.NotificationsGateway,
+        ],
+        exports: [notifications_gateway_1.NotificationsGateway],
     })
 ], NotificationsModule);
 //# sourceMappingURL=notifications.module.js.map

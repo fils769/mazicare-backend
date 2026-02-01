@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { NotificationsService } from './notifications.service';
+import { NotificationsGateway } from './notifications.gateway';
 
 type SubscriptionRenewedEvent = {
   userId: string;
@@ -34,17 +35,25 @@ type MessageReceivedEvent = {
 export class NotificationListeners {
   private readonly logger = new Logger(NotificationListeners.name);
 
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(
+    private readonly notificationsService: NotificationsService,
+    private readonly notificationsGateway: NotificationsGateway,
+  ) {}
 
   @OnEvent('subscription.renewed')
   async handleSubscriptionRenewed(event: SubscriptionRenewedEvent) {
     try {
-      await this.notificationsService.createNotification(event.userId, {
+      const notification = await this.notificationsService.createNotification(event.userId, {
         recipientId: event.userId,
         title: 'Subscription Renewed',
         message: `Your ${event.planName} plan is active until ${new Date(event.subscription.endDate).toLocaleDateString()}.`,
         type: 'SUBSCRIPTION',
       });
+
+      // Send real-time notification via WebSocket
+      this.notificationsGateway.sendNotificationToUser(event.userId, notification);
+
+      this.logger.log(`Subscription renewal notification sent to user ${event.userId}`);
     } catch (error) {
       this.logger.error(
         'Failed to create subscription renewal notification',
@@ -62,12 +71,17 @@ export class NotificationListeners {
     }
 
     try {
-      await this.notificationsService.createNotification(message.recipientId, {
+      const notification = await this.notificationsService.createNotification(message.recipientId, {
         recipientId: message.recipientId,
         title: `New message from ${message.sender?.email ?? 'a user'}`,
         message: message.content,
         type: 'MESSAGE',
       });
+
+      // Send real-time notification via WebSocket
+      this.notificationsGateway.sendNotificationToUser(message.recipientId, notification);
+
+      this.logger.log(`Message notification sent to user ${message.recipientId}`);
     } catch (error) {
       this.logger.error(
         'Failed to create message notification',

@@ -11,11 +11,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubscriptionService = void 0;
 const common_1 = require("@nestjs/common");
+const event_emitter_1 = require("@nestjs/event-emitter");
 const prisma_service_1 = require("../prisma/prisma.service");
 let SubscriptionService = class SubscriptionService {
     prisma;
-    constructor(prisma) {
+    eventEmitter;
+    constructor(prisma, eventEmitter) {
         this.prisma = prisma;
+        this.eventEmitter = eventEmitter;
     }
     async getSubscription(userId) {
         const subscription = await this.prisma.subscription.findUnique({
@@ -57,6 +60,11 @@ let SubscriptionService = class SubscriptionService {
                 status: 'ACTIVE'
             }
         });
+        this.eventEmitter.emit('subscription.renewed', {
+            userId,
+            planName: plan.name,
+            subscription,
+        });
         return {
             success: true,
             subscription,
@@ -91,6 +99,7 @@ let SubscriptionService = class SubscriptionService {
 exports.SubscriptionService = SubscriptionService;
 exports.SubscriptionService = SubscriptionService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        event_emitter_1.EventEmitter2])
 ], SubscriptionService);
 //# sourceMappingURL=subscription.service.js.map

@@ -1,4 +1,3 @@
-// src/care-request/care-request.service.ts
 import {
   BadRequestException,
   ConflictException,
@@ -13,7 +12,12 @@ import {
   DayOfWeek,
 } from './dto/create-care-request.dto';
 import { UpdateCareRequestDto } from './dto/update-care-request.dto';
-import { CareRequest, Prisma, RequestStatus } from '@prisma/client';
+import {
+  CareRequest,
+  Prisma,
+  RequestStatus,
+  ScheduleStatus,
+} from '@prisma/client';
 
 @Injectable()
 export class CareRequestService {
@@ -96,7 +100,7 @@ export class CareRequestService {
         throw new ConflictException('Pending request already exists');
 
       // Create care request
-      return tx.careRequest.create({
+      const careRequest = await tx.careRequest.create({
         data: {
           elderId: elder.id,
           caregiverId: caregiver.id,
@@ -106,6 +110,36 @@ export class CareRequestService {
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
       });
+
+      await tx.activityLog.create({
+        data: {
+          userId,
+          actorRole: 'FAMILY',
+          category: 'USER_ACTIVITY',
+          eventType: 'CARE_REQUEST_CREATED',
+          entityType: 'CareRequest',
+          entityId: careRequest.id,
+          metadata: {
+            elderId: elder.id,
+            elderName: `${elder.firstName} ${elder.lastName}`,
+            caregiverId: caregiver.id,
+            careType: dto.careType,
+            careDays: dto.careDays ?? [],
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: caregiver.userId,
+          title: 'New Care Request',
+          message: `${family.familyName} has sent you a care request for ${elder.firstName}.`,
+          type: 'CARE_REQUEST_UPDATE',
+        },
+      });
+
+      return careRequest;
     });
   }
 
@@ -114,7 +148,10 @@ export class CareRequestService {
     return this.prisma.$transaction(async (tx) => {
       const request = await tx.careRequest.findUnique({
         where: { id: requestId },
-        include: { caregiver: true },
+        include: {
+          family: { include: { user: true } },
+          caregiver: true,
+        },
       });
       if (!request) throw new NotFoundException();
       if (request.caregiver.userId !== userId) throw new ForbiddenException();
@@ -141,6 +178,30 @@ export class CareRequestService {
 
       // Create schedules in batch
       await this.createSchedulesForAcceptedRequest(tx, request);
+      await tx.activityLog.create({
+        data: {
+          userId,
+          actorRole: 'CAREGIVER',
+          category: 'USER_ACTIVITY',
+          eventType: 'CARE_REQUEST_ACCEPTED',
+          entityType: 'CareRequest',
+          entityId: request.id,
+          metadata: {
+            elderId: request.elderId,
+            caregiverId: request.caregiverId,
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: request.family.userId,
+          title: 'Care Request Accepted',
+          message: `Your care request has been accepted.`,
+          type: 'CARE_REQUEST_UPDATE',
+        },
+      });
 
       return acceptedRequest;
     });
@@ -153,39 +214,58 @@ export class CareRequestService {
   ) {
     const days =
       request.careType === 'FULL_TIME'
-        ? Object.values(DayOfWeek)
+        ? [
+            DayOfWeek.MONDAY,
+            DayOfWeek.TUESDAY,
+            DayOfWeek.WEDNESDAY,
+            DayOfWeek.THURSDAY,
+            DayOfWeek.FRIDAY,
+            DayOfWeek.SATURDAY,
+            DayOfWeek.SUNDAY,
+          ]
         : request.careDays;
 
-    // Batch create all schedules at once
-    const schedules = await Promise.all(
-      days.map((day) =>
-        tx.schedule.create({
-          data: {
-            elderId: request.elderId,
-            careRequestId: request.id,
-            day,
-            start: '08:00',
-            end: '21:00',
+    for (const day of days) {
+      const existingSchedule = await tx.schedule.findFirst({
+        where: {
+          elderId: request.elderId,
+          day,
+        },
+      });
+
+      if (existingSchedule) continue;
+
+      // Use default tasks (or templates)
+      const scheduleItems = this.defaultScheduleItems;
+
+      if (!scheduleItems.length) continue;
+
+      // 🔑 Sort tasks by time
+      const sortedItems = [...scheduleItems].sort((a, b) =>
+        a.startTime.localeCompare(b.startTime),
+      );
+
+      await tx.schedule.create({
+        data: {
+          elderId: request.elderId,
+          careRequestId: request.id,
+          day,
+
+          start: sortedItems[0].startTime,
+          end: sortedItems[sortedItems.length - 1].endTime,
+
+          scheduleItems: {
+            create: sortedItems.map((item) => ({
+              title: item.title,
+              description: item.description,
+              startTime: item.startTime,
+              endTime: item.endTime,
+              status: ScheduleStatus.PENDING,
+            })),
           },
-        }),
-      ),
-    );
-
-    // Batch create all schedule items for all schedules
-    const allScheduleItems = schedules.flatMap((schedule) =>
-      this.defaultScheduleItems.map((item) => ({
-        scheduleId: schedule.id,
-        title: item.title,
-        description: item.description,
-        startTime: item.startTime,
-        endTime: item.endTime,
-      })),
-    );
-
-    // Single createMany for all items (7 days × 6 items = 42 items in one query)
-    await tx.scheduleItem.createMany({
-      data: allScheduleItems,
-    });
+        },
+      });
+    }
   }
 
   /** Get all care requests for a user (family or caregiver) */
@@ -247,7 +327,7 @@ export class CareRequestService {
       throw new BadRequestException('Cannot update non-pending request');
     if (request.family.userId !== userId) throw new ForbiddenException();
 
-    return this.prisma.careRequest.update({
+    const updated = await this.prisma.careRequest.update({
       where: { id: requestId },
       data: {
         careType: dto.careType ?? request.careType,
@@ -255,6 +335,24 @@ export class CareRequestService {
         status: dto.status ?? request.status,
       },
     });
+
+    // ✅ Activity log
+    await this.prisma.activityLog.create({
+      data: {
+        userId,
+        actorRole: 'FAMILY',
+        category: 'USER_ACTIVITY',
+        eventType: 'CARE_REQUEST_UPDATED',
+        entityType: 'CareRequest',
+        entityId: request.id,
+        metadata: {
+          updatedFields: Object.keys(dto),
+          timestamp: new Date().toISOString(),
+        },
+      },
+    });
+
+    return updated;
   }
 
   /** Delete a care request */
@@ -270,6 +368,29 @@ export class CareRequestService {
       throw new BadRequestException('Cannot delete non-pending request');
     if (request.family.userId !== userId) throw new ForbiddenException();
 
+    await this.prisma.activityLog.create({
+      data: {
+        userId,
+        actorRole: 'FAMILY',
+        category: 'USER_ACTIVITY',
+        eventType: 'CARE_REQUEST_DELETED',
+        entityType: 'CareRequest',
+        entityId: request.id,
+        metadata: {
+          timestamp: new Date().toISOString(),
+        },
+      },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        userId: request.caregiverId,
+        title: 'Care Request Deleted',
+        message: `A care request for ${request.elderId} has been deleted.`,
+        type: 'CARE_REQUEST_UPDATE',
+      },
+    });
+
     return this.prisma.careRequest.delete({ where: { id: requestId } });
   }
 
@@ -277,17 +398,51 @@ export class CareRequestService {
   async rejectCareRequest(userId: string, requestId: string) {
     const request = await this.prisma.careRequest.findUnique({
       where: { id: requestId },
-      include: { caregiver: true },
+      include: { caregiver: true ,
+        family: { include: { user: true } },
+      },
+      
     });
+
+    
     if (!request) throw new NotFoundException('Care request not found');
     if (request.caregiver.userId !== userId) throw new ForbiddenException();
     if (request.status !== 'PENDING')
       throw new BadRequestException('Request not pending');
 
-    return this.prisma.careRequest.update({
+    const rejected = await this.prisma.careRequest.update({
       where: { id: requestId },
       data: { status: 'REJECTED', respondedAt: new Date() },
     });
+
+    // ✅ Activity log
+    await this.prisma.activityLog.create({
+      data: {
+        userId,
+        actorRole: 'CAREGIVER',
+        category: 'USER_ACTIVITY',
+        eventType: 'CARE_REQUEST_REJECTED',
+        entityType: 'CareRequest',
+        entityId: request.id,
+        metadata: {
+          elderId: request.elderId,
+          caregiverId: request.caregiverId,
+          timestamp: new Date().toISOString(),
+        },
+      },
+    });
+
+    // ✅ Notify family
+    await this.prisma.notification.create({
+      data: {
+        userId: request.family.userId,
+        title: 'Care Request Rejected',
+        message: `Your care request has been rejected.`,
+        type: 'CARE_REQUEST_UPDATE',
+      },
+    });
+
+    return rejected;
   }
 
   async removeCaregiverFromFamily(
@@ -466,7 +621,7 @@ export class CareRequestService {
       };
     });
   }
-  
+
   async removeFamilyFromCaregiver(
     caregiverUserId: string,
     familyId: string,
@@ -476,18 +631,16 @@ export class CareRequestService {
     const caregiver = await this.prisma.caregiver.findUnique({
       where: { userId: caregiverUserId },
     });
-  
+
     if (!caregiver) {
       throw new NotFoundException('Caregiver not found');
     }
-  
+
     // Authorization check
     if (actorId && caregiver.userId !== actorId) {
-      throw new ForbiddenException(
-        'You are not allowed to remove this family',
-      );
+      throw new ForbiddenException('You are not allowed to remove this family');
     }
-  
+
     // Delegate to shared logic using DB caregiver.id
     return this.removeCaregiverFromFamily(
       caregiver.id,
@@ -496,7 +649,6 @@ export class CareRequestService {
       actorId,
     );
   }
-  
 
   async getCaregiverRelationships(caregiverId: string) {
     return this.prisma.careRequest.findMany({

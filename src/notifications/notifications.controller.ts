@@ -7,6 +7,7 @@ import {
   Body,
   UseGuards,
   Request,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -33,6 +34,13 @@ export class NotificationsController {
     return this.notificationsService.getNotifications(req.user.userId);
   }
 
+    
+  @Put('all/read')
+  @ApiOperation({ summary: 'Mark all notifications as read for current user' })
+  async markAllAsRead(@Request() req) {
+    return this.notificationsService.markAllAsRead(req.user.userId);
+  }
+
   @Put(':id/read')
   @ApiOperation({ summary: 'Mark a notification as read' })
   @ApiParam({ name: 'id', description: 'Notification identifier' })
@@ -52,4 +60,19 @@ export class NotificationsController {
       notificationData,
     );
   }
+
+  @Delete('all')
+  @ApiOperation({ summary: 'Delete all notifications for current user' })
+  async deleteAllNotifications(@Request() req) {
+    return this.notificationsService.deleteAllNotifications(req.user.userId);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a notification' })
+  @ApiParam({ name: 'id', description: 'Notification identifier' })
+  async deleteNotification(@Request() req, @Param('id') id: string) {
+    return this.notificationsService.deleteNotification(req.user.userId, id);
+  }
+
+
 }

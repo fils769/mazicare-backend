@@ -1,8 +1,10 @@
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { RenewSubscriptionDto } from './dto/subscription.dto';
 export declare class SubscriptionService {
     private prisma;
-    constructor(prisma: PrismaService);
+    private eventEmitter;
+    constructor(prisma: PrismaService, eventEmitter: EventEmitter2);
     getSubscription(userId: string): Promise<{
         planName: string;
         plan: {

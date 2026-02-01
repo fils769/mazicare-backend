@@ -1,0 +1,341 @@
+===============================================
+REAL-TIME NOTIFICATIONS GUIDE
+===============================================
+
+✅ IMPLEMENTATION COMPLETE!
+
+Your notification system now supports REAL-TIME WebSocket notifications!
+
+===============================================
+BACKEND SETUP
+===============================================
+
+📁 Files Created/Modified:
+1. ✅ src/notifications/notifications.gateway.ts - WebSocket gateway for notifications
+2. ✅ src/notifications/notifications.module.ts - Added gateway and JWT support
+3. ✅ src/notifications/notification.listeners.ts - Sends real-time notifications
+4. ✅ src/subscription/subscription.service.ts - Emits subscription.renewed event
+5. ✅ src/messages/messages.service.ts - Emits messages.received event
+6. ✅ src/app.module.ts - Global EventEmitterModule
+
+🔌 WebSocket Endpoint:
+ws://localhost:3001/socket.io
+Namespace: /ws/notifications
+
+===============================================
+FRONTEND INTEGRATION
+===============================================
+
+📦 Install Socket.IO Client:
+```bash
+npm install socket.io-client
+# or
+yarn add socket.io-client
+```
+
+🔧 React/Next.js Example:
+```typescript
+import { useEffect, useState } from 'react';
+import { io, Socket } from 'socket.io-client';
+
+export function useNotifications(token: string) {
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+
+    // Connect to notifications WebSocket
+    const newSocket = io('http://localhost:3001/ws/notifications', {
+      auth: { token },
+      transports: ['websocket', 'polling'],
+    });
+
+    // Connection events
+    newSocket.on('connected', (data) => {
+      console.log('✅ Connected to notifications:', data);
+      setIsConnected(true);
+    });
+
+    newSocket.on('error', (error) => {
+      console.error('❌ Notification connection error:', error);
+      setIsConnected(false);
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('🔌 Disconnected from notifications');
+      setIsConnected(false);
+    });
+
+    // Listen for real-time notifications
+    newSocket.on('notification', (notification) => {
+      console.log('🔔 New notification:', notification);
+      
+      // Add to notifications list
+      setNotifications((prev) => [notification, ...prev]);
+      
+      // Show browser notification (optional)
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(notification.title, {
+          body: notification.message,
+          icon: '/notification-icon.png',
+        });
+      }
+      
+      // Play sound (optional)
+      const audio = new Audio('/notification-sound.mp3');
+      audio.play().catch(console.error);
+    });
+
+    setSocket(newSocket);
+
+    // Cleanup on unmount
+    return () => {
+      newSocket.close();
+    };
+  }, [token]);
+
+  return { socket, notifications, isConnected };
+}
+```
+
+🎯 Usage in Component:
+```typescript
+function NotificationBell() {
+  const { token } = useAuth(); // Your auth hook
+  const { notifications, isConnected } = useNotifications(token);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    // Fetch initial notifications from API
+    fetch('/api/notifications', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        const unread = data.filter(n => !n.read).length;
+        setUnreadCount(unread);
+      });
+  }, [token]);
+
+  useEffect(() => {
+    // Update unread count when new notification arrives
+    setUnreadCount(prev => prev + 1);
+  }, [notifications.length]);
+
+  return (
+    <div className="notification-bell">
+      <button>
+        🔔
+        {unreadCount > 0 && (
+          <span className="badge">{unreadCount}</span>
+        )}
+      </button>
+      
+      {isConnected && <span className="status online">●</span>}
+      
+      <div className="dropdown">
+        {notifications.map(notification => (
+          <div key={notification.id} className="notification-item">
+            <h4>{notification.title}</h4>
+            <p>{notification.message}</p>
+            <small>{new Date(notification.createdAt).toLocaleString()}</small>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+===============================================
+VANILLA JAVASCRIPT EXAMPLE
+===============================================
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Real-time Notifications</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+  <div id="notifications"></div>
+  <div id="status">Disconnected</div>
+
+  <script>
+    const token = 'YOUR_JWT_TOKEN_HERE';
+    
+    // Connect to notifications
+    const socket = io('http://localhost:3001/ws/notifications', {
+      auth: { token },
+      transports: ['websocket', 'polling']
+    });
+
+    // Connection status
+    socket.on('connected', (data) => {
+      console.log('Connected:', data);
+      document.getElementById('status').textContent = 'Connected ✅';
+    });
+
+    socket.on('disconnect', () => {
+      document.getElementById('status').textContent = 'Disconnected ❌';
+    });
+
+    // Listen for notifications
+    socket.on('notification', (notification) => {
+      console.log('New notification:', notification);
+      
+      // Display notification
+      const div = document.createElement('div');
+      div.className = 'notification';
+      div.innerHTML = `
+        <h3>${notification.title}</h3>
+        <p>${notification.message}</p>
+        <small>${new Date(notification.createdAt).toLocaleString()}</small>
+      `;
+      
+      document.getElementById('notifications').prepend(div);
+      
+      // Browser notification
+      if (Notification.permission === 'granted') {
+        new Notification(notification.title, {
+          body: notification.message
+        });
+      }
+    });
+
+    // Request notification permission
+    if ('Notification' in window) {
+      Notification.requestPermission();
+    }
+  </script>
+</body>
+</html>
+```
+
+===============================================
+AUTHENTICATION OPTIONS
+===============================================
+
+The WebSocket gateway accepts tokens via:
+
+1️⃣ Auth Object (Recommended):
+```typescript
+const socket = io('http://localhost:3001/ws/notifications', {
+  auth: { token: 'YOUR_JWT_TOKEN' }
+});
+```
+
+2️⃣ Query Parameter:
+```typescript
+const socket = io('http://localhost:3001/ws/notifications?token=YOUR_JWT_TOKEN');
+```
+
+3️⃣ Authorization Header:
+```typescript
+const socket = io('http://localhost:3001/ws/notifications', {
+  extraHeaders: {
+    Authorization: 'Bearer YOUR_JWT_TOKEN'
+  }
+});
+```
+
+===============================================
+NOTIFICATION EVENTS
+===============================================
+
+📥 Events You Receive:
+
+1. 'connected' - Successfully connected
+   Data: { userId, timestamp }
+
+2. 'notification' - New notification received
+   Data: {
+     id: string,
+     userId: string,
+     title: string,
+     message: string,
+     type: string,
+     read: boolean,
+     createdAt: string,
+     timestamp: string
+   }
+
+3. 'error' - Connection/auth error
+   Data: { status, message, code }
+
+4. 'disconnect' - Disconnected from server
+
+===============================================
+TESTING
+===============================================
+
+🧪 Test Real-time Notifications:
+
+1. Start your backend:
+   npm run start:dev
+
+2. Connect via browser console:
+   ```javascript
+   const socket = io('http://localhost:3001/ws/notifications', {
+     auth: { token: 'YOUR_JWT_TOKEN' }
+   });
+   
+   socket.on('notification', (data) => {
+     console.log('Notification:', data);
+   });
+   ```
+
+3. Trigger a notification:
+   - Send a message to another user
+   - Renew a subscription
+   - Use the API: POST /notifications
+
+4. Check console for real-time notification
+
+===============================================
+PRODUCTION CONSIDERATIONS
+===============================================
+
+🔒 Security:
+- Always use HTTPS/WSS in production
+- Validate JWT tokens on every connection
+- Implement rate limiting
+- Add CORS restrictions
+
+⚡ Performance:
+- Use Redis adapter for horizontal scaling
+- Implement connection pooling
+- Add reconnection logic with exponential backoff
+- Monitor WebSocket connections
+
+📊 Monitoring:
+- Track connected users count
+- Log connection/disconnection events
+- Monitor notification delivery rates
+- Set up alerts for connection failures
+
+===============================================
+TROUBLESHOOTING
+===============================================
+
+❌ Connection Failed:
+- Check JWT token is valid
+- Verify WebSocket URL is correct
+- Check CORS settings
+- Ensure backend is running
+
+❌ Not Receiving Notifications:
+- Check if user is connected (isConnected)
+- Verify event listeners are set up
+- Check backend logs for errors
+- Test with API endpoint first
+
+❌ Multiple Connections:
+- Ensure socket cleanup on unmount
+- Check for duplicate useEffect calls
+- Verify token doesn't change unnecessarily
+
+===============================================

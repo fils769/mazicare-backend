@@ -194,7 +194,25 @@ export class CaregiverController {
   async searchFamilies(@Query() filters: any) {
     return this.caregiverService.searchFamilies(filters);
   }
+
+  @Get('activity')
+  async getActivity(
+    @Request() req,
+    @Query('period') period: string = '7d'
+  ) {
+    // Map old period values to new ones
+    const periodMap: Record<string, string> = {
+      '24h': 'today',
+      '7d': '7d',
+      '30d': '30d',
+      '12m': '90d'
+    };
+    
+    const mappedPeriod = periodMap[period] || period || '7d';
+    return this.caregiverService.getActivity(req.user.userId, mappedPeriod);
+  }
 }
+
 
 @Controller('caregivers')
 @UseGuards(JwtAuthGuard)

@@ -111,6 +111,16 @@ let CaregiverController = class CaregiverController {
     async searchFamilies(filters) {
         return this.caregiverService.searchFamilies(filters);
     }
+    async getActivity(req, period = '7d') {
+        const periodMap = {
+            '24h': 'today',
+            '7d': '7d',
+            '30d': '30d',
+            '12m': '90d'
+        };
+        const mappedPeriod = periodMap[period] || period || '7d';
+        return this.caregiverService.getActivity(req.user.userId, mappedPeriod);
+    }
 };
 exports.CaregiverController = CaregiverController;
 __decorate([
@@ -282,6 +292,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], CaregiverController.prototype, "searchFamilies", null);
+__decorate([
+    (0, common_1.Get)('activity'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('period')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], CaregiverController.prototype, "getActivity", null);
 exports.CaregiverController = CaregiverController = __decorate([
     (0, common_1.Controller)('caregiver'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

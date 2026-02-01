@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { SendMessageDto } from './dto/message.dto';
 import { SendMessageResult } from './interfaces/message.interface';
 
 @Injectable()
 export class MessagesService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly eventEmitter: EventEmitter2,
+    ) { }
 
     async sendMessage(
         senderId: string,
@@ -82,6 +86,20 @@ export class MessagesService {
                     recipientId,
                     content,
                 },
+                include: {
+                    sender: {
+                        select: {
+                            id: true,
+                            email: true,
+                        },
+                    },
+                    recipient: {
+                        select: {
+                            id: true,
+                            email: true,
+                        },
+                    },
+                },
             }),
             this.prisma.conversation.update({
                 where: { id: conversation.id },
@@ -91,6 +109,12 @@ export class MessagesService {
                 },
             }),
         ]);
+
+        // Emit event for notification
+        this.eventEmitter.emit('messages.received', {
+            message,
+            conversation: updatedConversation,
+        });
 
         return {
             message,

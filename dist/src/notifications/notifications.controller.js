@@ -26,11 +26,20 @@ let NotificationsController = class NotificationsController {
     async getNotifications(req) {
         return this.notificationsService.getNotifications(req.user.userId);
     }
+    async markAllAsRead(req) {
+        return this.notificationsService.markAllAsRead(req.user.userId);
+    }
     async markAsRead(req, id) {
         return this.notificationsService.markAsRead(req.user.userId, id);
     }
     async createNotification(req, notificationData) {
         return this.notificationsService.createNotification(req.user.userId, notificationData);
+    }
+    async deleteAllNotifications(req) {
+        return this.notificationsService.deleteAllNotifications(req.user.userId);
+    }
+    async deleteNotification(req, id) {
+        return this.notificationsService.deleteNotification(req.user.userId, id);
     }
 };
 exports.NotificationsController = NotificationsController;
@@ -42,6 +51,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], NotificationsController.prototype, "getNotifications", null);
+__decorate([
+    (0, common_1.Put)('all/read'),
+    (0, swagger_1.ApiOperation)({ summary: 'Mark all notifications as read for current user' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], NotificationsController.prototype, "markAllAsRead", null);
 __decorate([
     (0, common_1.Put)(':id/read'),
     (0, swagger_1.ApiOperation)({ summary: 'Mark a notification as read' }),
@@ -62,6 +79,24 @@ __decorate([
     __metadata("design:paramtypes", [Object, notification_dto_1.CreateNotificationDto]),
     __metadata("design:returntype", Promise)
 ], NotificationsController.prototype, "createNotification", null);
+__decorate([
+    (0, common_1.Delete)('all'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete all notifications for current user' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], NotificationsController.prototype, "deleteAllNotifications", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete a notification' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Notification identifier' }),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], NotificationsController.prototype, "deleteNotification", null);
 exports.NotificationsController = NotificationsController = __decorate([
     (0, swagger_1.ApiTags)('Notifications'),
     (0, swagger_1.ApiBearerAuth)('bearer'),

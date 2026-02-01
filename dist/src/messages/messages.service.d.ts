@@ -1,9 +1,11 @@
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { SendMessageDto } from './dto/message.dto';
 import { SendMessageResult } from './interfaces/message.interface';
 export declare class MessagesService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly eventEmitter;
+    constructor(prisma: PrismaService, eventEmitter: EventEmitter2);
     sendMessage(senderId: string, messageData: SendMessageDto): Promise<SendMessageResult>;
     getMessages(userId: string, conversationId?: string): Promise<({
         sender: {

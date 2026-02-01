@@ -144,7 +144,9 @@ let ScheduleService = class ScheduleService {
                             .filter((item) => !newItemIds.includes(item.id))
                             .map((item) => item.id);
                         if (itemsToDelete.length > 0) {
-                            await tx.scheduleItem.deleteMany({ where: { id: { in: itemsToDelete } } });
+                            await tx.scheduleItem.deleteMany({
+                                where: { id: { in: itemsToDelete } },
+                            });
                         }
                         const finalSchedule = await tx.schedule.findUnique({
                             where: { id: existingSchedule.id },
@@ -189,7 +191,7 @@ let ScheduleService = class ScheduleService {
         if (!scheduleItems || scheduleItems.length === 0) {
             return { dayStart: '00:00', dayEnd: '00:00' };
         }
-        const itemsWithMinutes = scheduleItems.map(item => ({
+        const itemsWithMinutes = scheduleItems.map((item) => ({
             ...item,
             startMinutes: this.timeToMinutes(item.startTime),
             endMinutes: this.timeToMinutes(item.endTime),
@@ -215,7 +217,6 @@ let ScheduleService = class ScheduleService {
         const today = new Date()
             .toLocaleString('en-US', { weekday: 'long' })
             .toUpperCase();
-        console.log(today);
         return this.prisma.schedule.findMany({
             where: { elderId, day: today },
             include: { scheduleItems: true },

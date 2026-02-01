@@ -31,7 +31,7 @@ let DealsService = class DealsService {
         return deal;
     }
     async findAll(query) {
-        const { category, region, isActive, limit = 50, offset = 0 } = query;
+        const { category, region, isActive, hasDiscount, limit = 50, offset = 0 } = query;
         const where = {};
         if (category) {
             where.category = category;
@@ -41,6 +41,11 @@ let DealsService = class DealsService {
         }
         if (isActive !== undefined) {
             where.endsAt = isActive ? { gte: new Date() } : { lt: new Date() };
+        }
+        if (hasDiscount !== undefined) {
+            where.discountPercent = hasDiscount
+                ? { not: null, gt: 0 }
+                : { OR: [{ equals: null }, { equals: 0 }] };
         }
         const [deals, total] = await Promise.all([
             this.prisma.deal.findMany({

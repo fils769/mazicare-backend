@@ -16,6 +16,11 @@ export class GetDealsQueryDto {
   isActive?: boolean;
 
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  hasDiscount?: boolean;
+
+  @IsOptional()
   @Transform(({ value }) => parseInt(value, 10))
   @IsNumber()
   @Min(1)

@@ -11,11 +11,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessagesService = void 0;
 const common_1 = require("@nestjs/common");
+const event_emitter_1 = require("@nestjs/event-emitter");
 const prisma_service_1 = require("../prisma/prisma.service");
 let MessagesService = class MessagesService {
     prisma;
-    constructor(prisma) {
+    eventEmitter;
+    constructor(prisma, eventEmitter) {
         this.prisma = prisma;
+        this.eventEmitter = eventEmitter;
     }
     async sendMessage(senderId, messageData) {
         const { recipientId, content, conversationId } = messageData;
@@ -71,6 +74,20 @@ let MessagesService = class MessagesService {
                     recipientId,
                     content,
                 },
+                include: {
+                    sender: {
+                        select: {
+                            id: true,
+                            email: true,
+                        },
+                    },
+                    recipient: {
+                        select: {
+                            id: true,
+                            email: true,
+                        },
+                    },
+                },
             }),
             this.prisma.conversation.update({
                 where: { id: conversation.id },
@@ -80,6 +97,10 @@ let MessagesService = class MessagesService {
                 },
             }),
         ]);
+        this.eventEmitter.emit('messages.received', {
+            message,
+            conversation: updatedConversation,
+        });
         return {
             message,
             conversation: updatedConversation,
@@ -349,6 +370,7 @@ let MessagesService = class MessagesService {
 exports.MessagesService = MessagesService;
 exports.MessagesService = MessagesService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        event_emitter_1.EventEmitter2])
 ], MessagesService);
 //# sourceMappingURL=messages.service.js.map
