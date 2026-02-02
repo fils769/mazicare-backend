@@ -88,6 +88,25 @@ export class CaregiverController {
     return this.caregiverService.uploadIdPassport(req.user.userId, uploadResult.url);
   }
 
+  @Post('documents/residence-permit')
+  @UseInterceptors(FileInterceptor('residencePermit'))
+  async uploadResidencePermit(
+    @Request() req,
+    @UploadedFile() residencePermit: Express.Multer.File,
+  ) {
+    if (!residencePermit) {
+      throw new BadRequestException('Residence permit file is required');
+    }
+
+    const uploadResult = await this.uploadThingService.uploadFile(
+      residencePermit,
+    );
+    return this.caregiverService.uploadResidencePermit(
+      req.user.userId,
+      uploadResult.url,
+    );
+  }
+
   @Post('documents/recommendation')
   @UseInterceptors(FileInterceptor('recommendation'))
   async uploadRecommendation(@Request() req, @UploadedFile() recommendation: Express.Multer.File) {
@@ -110,6 +129,21 @@ export class CaregiverController {
     return this.caregiverService.uploadCertificate(req.user.userId, uploadResult.url);
   }
 
+  @Post('attachments')
+  async saveAttachments(
+    @Request() req,
+    @Body()
+    data: {
+      idPassportPhoto: string;
+      residencePermit?: string;
+      recommendationLetter?: string;
+      certificates: string[];
+      isGreekResident: boolean;
+    },
+  ) {
+    return this.caregiverService.saveAttachments(req.user.userId, data);
+  }
+  
   @Get('programs')
   @Public()
   async getCarePrograms() {

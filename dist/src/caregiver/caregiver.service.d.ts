@@ -5,54 +5,56 @@ export declare class CaregiverService {
     constructor(prisma: PrismaService);
     saveDetails(userId: string, data: SaveDetailsDto, profilePicture?: string): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
+        email: string | null;
+        profilePicture: string | null;
         firstName: string | null;
         lastName: string | null;
         dateOfBirth: string | null;
         gender: string | null;
         region: string | null;
         bio: string | null;
-        profilePicture: string | null;
-        email: string | null;
         phone: string | null;
         regionId: string | null;
         documentUrl: string | null;
         idPassportPhoto: string | null;
         recommendationLetter: string | null;
-        certificates: string[];
+        residencePermit: string | null;
+        isGreekResident: boolean | null;
         experience: number | null;
         onboardingComplete: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         stripeAccountId: string | null;
         languages: string[];
     }>;
     getRegions(): Promise<{
         id: string;
-        createdAt: Date;
         name: string;
+        createdAt: Date;
     }[]>;
     saveRegionSelection(userId: string, data: RegionSelectionDto): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
+        email: string | null;
+        profilePicture: string | null;
         firstName: string | null;
         lastName: string | null;
         dateOfBirth: string | null;
         gender: string | null;
         region: string | null;
         bio: string | null;
-        profilePicture: string | null;
-        email: string | null;
         phone: string | null;
         regionId: string | null;
         documentUrl: string | null;
         idPassportPhoto: string | null;
         recommendationLetter: string | null;
-        certificates: string[];
+        residencePermit: string | null;
+        isGreekResident: boolean | null;
         experience: number | null;
         onboardingComplete: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         stripeAccountId: string | null;
         languages: string[];
     }>;
@@ -62,63 +64,84 @@ export declare class CaregiverService {
     uploadIdPassport(userId: string, idPassportPhoto: string): Promise<{
         idPassportPhoto: string | null;
     }>;
+    uploadResidencePermit(userId: string, residencePermit: string): Promise<{
+        residencePermit: string | null;
+    }>;
     uploadRecommendation(userId: string, recommendationLetter: string): Promise<{
         recommendationLetter: string | null;
     }>;
     uploadCertificate(userId: string, certificateUrl: string): Promise<{
         certificates: string[];
     }>;
+    saveAttachments(userId: string, data: {
+        idPassportPhoto: string;
+        residencePermit?: string;
+        recommendationLetter?: string;
+        certificates: string[];
+        isGreekResident: boolean;
+    }): Promise<{
+        message: string;
+        data: {
+            idPassportPhoto: string | null;
+            residencePermit: string | null;
+            recommendationLetter: string | null;
+            certificates: string[];
+            isGreekResident: boolean | null;
+        };
+    }>;
     getCarePrograms(): Promise<{
         id: string;
-        createdAt: Date;
         name: string;
+        createdAt: Date;
         description: string | null;
     }[]>;
     saveCareProgram(userId: string, data: CareProgramDto): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
+        email: string | null;
+        profilePicture: string | null;
         firstName: string | null;
         lastName: string | null;
         dateOfBirth: string | null;
         gender: string | null;
         region: string | null;
         bio: string | null;
-        profilePicture: string | null;
-        email: string | null;
         phone: string | null;
         regionId: string | null;
         documentUrl: string | null;
         idPassportPhoto: string | null;
         recommendationLetter: string | null;
-        certificates: string[];
+        residencePermit: string | null;
+        isGreekResident: boolean | null;
         experience: number | null;
         onboardingComplete: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         stripeAccountId: string | null;
         languages: string[];
     }>;
     completeOnboarding(userId: string): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
+        email: string | null;
+        profilePicture: string | null;
         firstName: string | null;
         lastName: string | null;
         dateOfBirth: string | null;
         gender: string | null;
         region: string | null;
         bio: string | null;
-        profilePicture: string | null;
-        email: string | null;
         phone: string | null;
         regionId: string | null;
         documentUrl: string | null;
         idPassportPhoto: string | null;
         recommendationLetter: string | null;
-        certificates: string[];
+        residencePermit: string | null;
+        isGreekResident: boolean | null;
         experience: number | null;
         onboardingComplete: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         stripeAccountId: string | null;
         languages: string[];
     }>;
@@ -144,36 +167,43 @@ export declare class CaregiverService {
         caregiver: {
             programs: {
                 id: string;
-                createdAt: Date;
                 name: string;
+                createdAt: Date;
                 description: string | null;
+            }[];
+            certificates: {
+                id: string;
+                createdAt: Date;
+                caregiverId: string;
+                url: string;
             }[];
             caregiverRegion: {
                 id: string;
-                createdAt: Date;
                 name: string;
+                createdAt: Date;
             } | null;
         } & {
             id: string;
+            createdAt: Date;
+            updatedAt: Date;
             userId: string;
+            email: string | null;
+            profilePicture: string | null;
             firstName: string | null;
             lastName: string | null;
             dateOfBirth: string | null;
             gender: string | null;
             region: string | null;
             bio: string | null;
-            profilePicture: string | null;
-            email: string | null;
             phone: string | null;
             regionId: string | null;
             documentUrl: string | null;
             idPassportPhoto: string | null;
             recommendationLetter: string | null;
-            certificates: string[];
+            residencePermit: string | null;
+            isGreekResident: boolean | null;
             experience: number | null;
             onboardingComplete: boolean;
-            createdAt: Date;
-            updatedAt: Date;
             stripeAccountId: string | null;
             languages: string[];
         };
@@ -209,16 +239,16 @@ export declare class CaregiverService {
     assignCaregiver(caregiverId: string, elderId: string, userId: string): Promise<{
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         status: import(".prisma/client").$Enums.RequestStatus;
+        updatedAt: Date;
         caregiverId: string;
-        elderId: string;
         familyId: string;
         careType: import(".prisma/client").$Enums.CareType;
         careDays: import(".prisma/client").$Enums.DayOfWeek[];
         requestedAt: Date;
         respondedAt: Date | null;
         expiresAt: Date | null;
+        elderId: string;
     } | {
         success: boolean;
         message: string;
@@ -261,7 +291,12 @@ export declare class CaregiverService {
             profilePicture: string | null;
             idPassportPhoto: string | null;
             recommendationLetter: string | null;
-            certificates: string[];
+            certificates: {
+                id: string;
+                createdAt: Date;
+                caregiverId: string;
+                url: string;
+            }[];
             documentUrl: string | null;
         };
     }>;
@@ -297,24 +332,24 @@ export declare class CaregiverService {
             scheduleItems: {
                 id: string;
                 createdAt: Date;
-                updatedAt: Date;
-                description: string | null;
                 status: import(".prisma/client").$Enums.ScheduleStatus;
-                startTime: string;
-                scheduleId: string;
+                updatedAt: Date;
                 title: string;
+                description: string | null;
+                startTime: string;
                 endTime: string;
+                scheduleId: string;
             }[];
         } & {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             status: import(".prisma/client").$Enums.ScheduleStatus;
+            updatedAt: Date;
             elderId: string;
-            careRequestId: string | null;
             day: import(".prisma/client").$Enums.DayOfWeek;
             start: string;
             end: string;
+            careRequestId: string | null;
         })[];
     }[]>;
     getElderSchedules(userId: string, elderId: string): Promise<{
@@ -324,47 +359,47 @@ export declare class CaregiverService {
             scheduleItems: {
                 id: string;
                 createdAt: Date;
-                updatedAt: Date;
-                description: string | null;
                 status: import(".prisma/client").$Enums.ScheduleStatus;
-                startTime: string;
-                scheduleId: string;
+                updatedAt: Date;
                 title: string;
+                description: string | null;
+                startTime: string;
                 endTime: string;
+                scheduleId: string;
             }[];
         } & {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             status: import(".prisma/client").$Enums.ScheduleStatus;
+            updatedAt: Date;
             elderId: string;
-            careRequestId: string | null;
             day: import(".prisma/client").$Enums.DayOfWeek;
             start: string;
             end: string;
+            careRequestId: string | null;
         })[];
     }>;
     updateScheduleItem(userId: string, itemId: string, data: UpdateScheduleItemDto): Promise<{
         id: string;
         createdAt: Date;
-        updatedAt: Date;
-        description: string | null;
         status: import(".prisma/client").$Enums.ScheduleStatus;
-        startTime: string;
-        scheduleId: string;
+        updatedAt: Date;
         title: string;
+        description: string | null;
+        startTime: string;
         endTime: string;
+        scheduleId: string;
     }>;
     updateScheduleItemStatus(userId: string, itemId: string, status: string): Promise<{
         id: string;
         createdAt: Date;
-        updatedAt: Date;
-        description: string | null;
         status: import(".prisma/client").$Enums.ScheduleStatus;
-        startTime: string;
-        scheduleId: string;
+        updatedAt: Date;
         title: string;
+        description: string | null;
+        startTime: string;
         endTime: string;
+        scheduleId: string;
     }>;
     getElderRequests(userId: string): Promise<{
         requestId: string;

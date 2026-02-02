@@ -121,6 +121,23 @@ export class CaregiverService {
     return { idPassportPhoto: caregiver.idPassportPhoto };
   }
 
+  async uploadResidencePermit(userId: string, residencePermit: string) {
+    let caregiver = await this.prisma.caregiver.findUnique({
+      where: { userId },
+    });
+
+    if (!caregiver) {
+      throw new NotFoundException('Caregiver not found');
+    }
+
+    caregiver = await this.prisma.caregiver.update({
+      where: { userId },
+      data: { residencePermit },
+    });
+
+    return { residencePermit: caregiver.residencePermit };
+  }
+
   async uploadRecommendation(userId: string, recommendationLetter: string) {
     let caregiver = await this.prisma.caregiver.findUnique({
       where: { userId },
@@ -141,25 +158,110 @@ export class CaregiverService {
   }
 
   async uploadCertificate(userId: string, certificateUrl: string) {
-    let caregiver = await this.prisma.caregiver.findUnique({
+    const caregiver = await this.prisma.caregiver.findUnique({
       where: { userId },
+      include: {
+        certificates: true,
+        programs: true,
+        caregiverRegion: true,
+      },
     });
 
     if (!caregiver) {
-      caregiver = await this.prisma.caregiver.create({
-        data: { userId, certificates: [certificateUrl] },
+      throw new NotFoundException('Caregiver not found');
+    }
+
+    const certificate = await this.prisma.certificate.create({
+      data: {
+        url: certificateUrl,
+        caregiverId: caregiver.id,
+      },
+    });
+
+    // Get updated certificates list
+    const updatedCertificates = await this.prisma.certificate.findMany({
+      where: { caregiverId: caregiver.id },
+      select: { url: true },
+    });
+
+    return {
+      certificates: updatedCertificates.map((cert) => cert.url),
+    };
+  }
+  
+  async saveAttachments(
+    userId: string,
+    data: {
+      idPassportPhoto: string;
+      residencePermit?: string;
+      recommendationLetter?: string;
+      certificates: string[];
+      isGreekResident: boolean;
+    },
+  ) {
+    const caregiver = await this.prisma.caregiver.findUnique({
+      where: { userId },
+      include: { certificates: true },
+    });
+
+    if (!caregiver) {
+      throw new NotFoundException('Caregiver not found');
+    }
+
+    // Validate required fields
+    if (!data.idPassportPhoto) {
+      throw new BadRequestException('ID/Passport photo is required');
+    }
+
+    if (data.isGreekResident === false && !data.residencePermit) {
+      throw new BadRequestException('Residence permit is required for non-Greek residents');
+    }
+
+    // Update caregiver with basic document info
+    const updatedCaregiver = await this.prisma.caregiver.update({
+      where: { userId },
+      data: {
+        idPassportPhoto: data.idPassportPhoto,
+        residencePermit: data.residencePermit,
+        recommendationLetter: data.recommendationLetter,
+        isGreekResident: data.isGreekResident,
+      },
+    });
+
+    // Handle certificates
+    if (data.certificates && data.certificates.length > 0) {
+      // Remove existing certificates
+      await this.prisma.certificate.deleteMany({
+        where: { caregiverId: caregiver.id },
       });
-    } else {
-      // Append to existing certificates array
-      const existingCertificates = caregiver.certificates || [];
-      caregiver = await this.prisma.caregiver.update({
-        where: { userId },
-        data: { certificates: [...existingCertificates, certificateUrl] },
+
+      // Create new certificates
+      await this.prisma.certificate.createMany({
+        data: data.certificates.map((url) => ({
+          url,
+          caregiverId: caregiver.id,
+        })),
       });
     }
 
-    return { certificates: caregiver.certificates };
+    // Get updated certificates
+    const updatedCertificates = await this.prisma.certificate.findMany({
+      where: { caregiverId: caregiver.id },
+      select: { url: true },
+    });
+
+    return {
+      message: 'Attachments saved successfully',
+      data: {
+        idPassportPhoto: updatedCaregiver.idPassportPhoto,
+        residencePermit: updatedCaregiver.residencePermit,
+        recommendationLetter: updatedCaregiver.recommendationLetter,
+        certificates: updatedCertificates.map((cert) => cert.url),
+        isGreekResident: updatedCaregiver.isGreekResident,
+      },
+    };
   }
+
 
   async getCarePrograms() {
     return this.prisma.careProgram.findMany({
@@ -222,8 +324,9 @@ export class CaregiverService {
     const caregiver = await this.prisma.caregiver.findUnique({
       where: { userId },
       include: {
-        caregiverRegion: true,
+        certificates: true,
         programs: true,
+        caregiverRegion: true,
       },
     });
 
@@ -452,7 +555,7 @@ export class CaregiverService {
       },
     });
 
-    console.log("create notification called.")
+    console.log('create notification called.');
     // Create notification for caregiver
     await this.prisma.notification.create({
       data: {
@@ -564,6 +667,7 @@ export class CaregiverService {
         caregiverRegion: true,
         programs: true,
         reviews: { select: { rating: true } },
+        certificates: true, 
       },
     });
 
@@ -765,7 +869,6 @@ export class CaregiverService {
     };
   }
 
-
   async updateScheduleItem(
     userId: string,
     itemId: string,
@@ -818,7 +921,6 @@ export class CaregiverService {
       },
     });
   }
-
 
   async updateScheduleItemStatus(
     userId: string,
@@ -963,7 +1065,6 @@ export class CaregiverService {
       })),
     }));
   }
-
 
   async getActivity(userId: string, period: string) {
     console.log('--- getActivity called ---');

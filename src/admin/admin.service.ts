@@ -123,6 +123,7 @@ export class AdminService {
         caregiverRegion: true,
         programs: true,
         careRequests: { include: { elder: true } },
+        certificates: true, 
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -349,6 +350,7 @@ export class AdminService {
             where: { status: 'ACCEPTED' },
             include: { elder: true },
           },
+          certificates: true,
         },
       });
 

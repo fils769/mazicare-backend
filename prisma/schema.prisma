@@ -103,13 +103,16 @@ model Caregiver {
   documentUrl          String?
   idPassportPhoto      String?
   recommendationLetter String?
-  certificates         String[]
-  experience           Int?
-  onboardingComplete   Boolean       @default(false)
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
-  stripeAccountId      String?
-  languages            String[]
+  certificates        Certificate[]
+  residencePermit      String?
+  isGreekResident      Boolean?
+  experience         Int?
+  onboardingComplete Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  stripeAccountId    String?
+  languages          String[]
+
 
   user            User    @relation(fields: [userId], references: [id])
   caregiverRegion Region? @relation(fields: [regionId], references: [id])
@@ -119,6 +122,16 @@ model Caregiver {
   careRequests        CareRequest[]
 
   @@map("caregivers")
+}
+
+model Certificate {
+  id          String   @id @default(cuid())
+  url         String
+  caregiverId String
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  
+  @@index([caregiverId])
 }
 
 model CareProgram {
@@ -346,26 +359,24 @@ model Notification {
 }
 
 model Schedule {
-  id            String    @id @default(cuid())
+  id            String         @id @default(cuid())
   elderId       String
   careRequestId String?
   day           DayOfWeek
   start         String
   end           String
-  status        ScheduleStatus @default(ACTIVE) 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  status        ScheduleStatus @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   elder         Elder          @relation(fields: [elderId], references: [id], onDelete: Cascade)
-  careRequest   CareRequest?    @relation("CareRequestSchedules", fields: [careRequestId], references: [id], onDelete: Cascade)
+  careRequest   CareRequest?   @relation("CareRequestSchedules", fields: [careRequestId], references: [id], onDelete: Cascade)
   scheduleItems ScheduleItem[]
 
   @@index([elderId])
   @@index([careRequestId])
   @@map("schedules")
 }
-
-
 
 model ScheduleItem {
   id          String         @id @default(cuid())

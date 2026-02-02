@@ -110,6 +110,7 @@ let AdminService = class AdminService {
                 caregiverRegion: true,
                 programs: true,
                 careRequests: { include: { elder: true } },
+                certificates: true,
             },
             orderBy: { createdAt: 'desc' },
         });
@@ -306,6 +307,7 @@ let AdminService = class AdminService {
                         where: { status: 'ACCEPTED' },
                         include: { elder: true },
                     },
+                    certificates: true,
                 },
             });
             if (!caregiver)

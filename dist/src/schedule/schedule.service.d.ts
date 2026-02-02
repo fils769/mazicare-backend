@@ -29,116 +29,116 @@ export declare class ScheduleService {
     getTodaySchedule(elderId: string): Promise<({
         scheduleItems: {
             id: string;
-            status: import(".prisma/client").$Enums.ScheduleStatus;
             createdAt: Date;
+            status: import(".prisma/client").$Enums.ScheduleStatus;
             updatedAt: Date;
-            scheduleId: string;
             title: string;
             description: string | null;
             startTime: string;
             endTime: string;
+            scheduleId: string;
         }[];
     } & {
         id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.ScheduleStatus;
+        updatedAt: Date;
         elderId: string;
-        careRequestId: string | null;
         day: import(".prisma/client").$Enums.DayOfWeek;
         start: string;
         end: string;
-        status: import(".prisma/client").$Enums.ScheduleStatus;
-        createdAt: Date;
-        updatedAt: Date;
+        careRequestId: string | null;
     })[]>;
     getWeeklySchedule(elderId: string): Promise<({
         scheduleItems: {
             id: string;
-            status: import(".prisma/client").$Enums.ScheduleStatus;
             createdAt: Date;
+            status: import(".prisma/client").$Enums.ScheduleStatus;
             updatedAt: Date;
-            scheduleId: string;
             title: string;
             description: string | null;
             startTime: string;
             endTime: string;
+            scheduleId: string;
         }[];
     } & {
         id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.ScheduleStatus;
+        updatedAt: Date;
         elderId: string;
-        careRequestId: string | null;
         day: import(".prisma/client").$Enums.DayOfWeek;
         start: string;
         end: string;
-        status: import(".prisma/client").$Enums.ScheduleStatus;
-        createdAt: Date;
-        updatedAt: Date;
+        careRequestId: string | null;
     })[]>;
     getDaySchedule(elderId: string, day: DayOfWeek): Promise<({
         scheduleItems: {
             id: string;
-            status: import(".prisma/client").$Enums.ScheduleStatus;
             createdAt: Date;
+            status: import(".prisma/client").$Enums.ScheduleStatus;
             updatedAt: Date;
-            scheduleId: string;
             title: string;
             description: string | null;
             startTime: string;
             endTime: string;
+            scheduleId: string;
         }[];
     } & {
         id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.ScheduleStatus;
+        updatedAt: Date;
         elderId: string;
-        careRequestId: string | null;
         day: import(".prisma/client").$Enums.DayOfWeek;
         start: string;
         end: string;
-        status: import(".prisma/client").$Enums.ScheduleStatus;
-        createdAt: Date;
-        updatedAt: Date;
+        careRequestId: string | null;
     }) | null>;
     getElderSchedule(elderId: string): Promise<({
         scheduleItems: {
             id: string;
-            status: import(".prisma/client").$Enums.ScheduleStatus;
             createdAt: Date;
+            status: import(".prisma/client").$Enums.ScheduleStatus;
             updatedAt: Date;
-            scheduleId: string;
             title: string;
             description: string | null;
             startTime: string;
             endTime: string;
+            scheduleId: string;
         }[];
     } & {
         id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.ScheduleStatus;
+        updatedAt: Date;
         elderId: string;
-        careRequestId: string | null;
         day: import(".prisma/client").$Enums.DayOfWeek;
         start: string;
         end: string;
-        status: import(".prisma/client").$Enums.ScheduleStatus;
-        createdAt: Date;
-        updatedAt: Date;
+        careRequestId: string | null;
     })[]>;
     updateItemStatus(itemId: string, status: ScheduleStatus): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.ScheduleStatus;
         createdAt: Date;
+        status: import(".prisma/client").$Enums.ScheduleStatus;
         updatedAt: Date;
-        scheduleId: string;
         title: string;
         description: string | null;
         startTime: string;
         endTime: string;
+        scheduleId: string;
     }>;
     deleteSchedule(scheduleId: string): Promise<{
         id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.ScheduleStatus;
+        updatedAt: Date;
         elderId: string;
-        careRequestId: string | null;
         day: import(".prisma/client").$Enums.DayOfWeek;
         start: string;
         end: string;
-        status: import(".prisma/client").$Enums.ScheduleStatus;
-        createdAt: Date;
-        updatedAt: Date;
+        careRequestId: string | null;
     }>;
     deleteAllDaySchedules(elderId: string, day: DayOfWeek): Promise<import(".prisma/client").Prisma.BatchPayload>;
 }

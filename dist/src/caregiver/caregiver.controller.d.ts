@@ -26,60 +26,67 @@ export declare class CaregiverController {
             profilePicture: string | null;
             idPassportPhoto: string | null;
             recommendationLetter: string | null;
-            certificates: string[];
+            certificates: {
+                id: string;
+                createdAt: Date;
+                caregiverId: string;
+                url: string;
+            }[];
             documentUrl: string | null;
         };
     }>;
     saveDetails(req: any, data: SaveDetailsDto, profilePicture?: Express.Multer.File): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
+        email: string | null;
+        profilePicture: string | null;
         firstName: string | null;
         lastName: string | null;
         dateOfBirth: string | null;
         gender: string | null;
         region: string | null;
         bio: string | null;
-        profilePicture: string | null;
-        email: string | null;
         phone: string | null;
         regionId: string | null;
         documentUrl: string | null;
         idPassportPhoto: string | null;
         recommendationLetter: string | null;
-        certificates: string[];
+        residencePermit: string | null;
+        isGreekResident: boolean | null;
         experience: number | null;
         onboardingComplete: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         stripeAccountId: string | null;
         languages: string[];
     }>;
     getRegions(): Promise<{
         id: string;
-        createdAt: Date;
         name: string;
+        createdAt: Date;
     }[]>;
     saveRegionSelection(req: any, data: RegionSelectionDto): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
+        email: string | null;
+        profilePicture: string | null;
         firstName: string | null;
         lastName: string | null;
         dateOfBirth: string | null;
         gender: string | null;
         region: string | null;
         bio: string | null;
-        profilePicture: string | null;
-        email: string | null;
         phone: string | null;
         regionId: string | null;
         documentUrl: string | null;
         idPassportPhoto: string | null;
         recommendationLetter: string | null;
-        certificates: string[];
+        residencePermit: string | null;
+        isGreekResident: boolean | null;
         experience: number | null;
         onboardingComplete: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         stripeAccountId: string | null;
         languages: string[];
     }>;
@@ -89,63 +96,84 @@ export declare class CaregiverController {
     uploadIdPassport(req: any, idPassport: Express.Multer.File): Promise<{
         idPassportPhoto: string | null;
     }>;
+    uploadResidencePermit(req: any, residencePermit: Express.Multer.File): Promise<{
+        residencePermit: string | null;
+    }>;
     uploadRecommendation(req: any, recommendation: Express.Multer.File): Promise<{
         recommendationLetter: string | null;
     }>;
     uploadCertificate(req: any, certificate: Express.Multer.File): Promise<{
         certificates: string[];
     }>;
+    saveAttachments(req: any, data: {
+        idPassportPhoto: string;
+        residencePermit?: string;
+        recommendationLetter?: string;
+        certificates: string[];
+        isGreekResident: boolean;
+    }): Promise<{
+        message: string;
+        data: {
+            idPassportPhoto: string | null;
+            residencePermit: string | null;
+            recommendationLetter: string | null;
+            certificates: string[];
+            isGreekResident: boolean | null;
+        };
+    }>;
     getCarePrograms(): Promise<{
         id: string;
-        createdAt: Date;
         name: string;
+        createdAt: Date;
         description: string | null;
     }[]>;
     saveCareProgram(req: any, data: CareProgramDto): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
+        email: string | null;
+        profilePicture: string | null;
         firstName: string | null;
         lastName: string | null;
         dateOfBirth: string | null;
         gender: string | null;
         region: string | null;
         bio: string | null;
-        profilePicture: string | null;
-        email: string | null;
         phone: string | null;
         regionId: string | null;
         documentUrl: string | null;
         idPassportPhoto: string | null;
         recommendationLetter: string | null;
-        certificates: string[];
+        residencePermit: string | null;
+        isGreekResident: boolean | null;
         experience: number | null;
         onboardingComplete: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         stripeAccountId: string | null;
         languages: string[];
     }>;
     completeOnboarding(req: any): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
+        email: string | null;
+        profilePicture: string | null;
         firstName: string | null;
         lastName: string | null;
         dateOfBirth: string | null;
         gender: string | null;
         region: string | null;
         bio: string | null;
-        profilePicture: string | null;
-        email: string | null;
         phone: string | null;
         regionId: string | null;
         documentUrl: string | null;
         idPassportPhoto: string | null;
         recommendationLetter: string | null;
-        certificates: string[];
+        residencePermit: string | null;
+        isGreekResident: boolean | null;
         experience: number | null;
         onboardingComplete: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         stripeAccountId: string | null;
         languages: string[];
     }>;
@@ -171,36 +199,43 @@ export declare class CaregiverController {
         caregiver: {
             programs: {
                 id: string;
-                createdAt: Date;
                 name: string;
+                createdAt: Date;
                 description: string | null;
+            }[];
+            certificates: {
+                id: string;
+                createdAt: Date;
+                caregiverId: string;
+                url: string;
             }[];
             caregiverRegion: {
                 id: string;
-                createdAt: Date;
                 name: string;
+                createdAt: Date;
             } | null;
         } & {
             id: string;
+            createdAt: Date;
+            updatedAt: Date;
             userId: string;
+            email: string | null;
+            profilePicture: string | null;
             firstName: string | null;
             lastName: string | null;
             dateOfBirth: string | null;
             gender: string | null;
             region: string | null;
             bio: string | null;
-            profilePicture: string | null;
-            email: string | null;
             phone: string | null;
             regionId: string | null;
             documentUrl: string | null;
             idPassportPhoto: string | null;
             recommendationLetter: string | null;
-            certificates: string[];
+            residencePermit: string | null;
+            isGreekResident: boolean | null;
             experience: number | null;
             onboardingComplete: boolean;
-            createdAt: Date;
-            updatedAt: Date;
             stripeAccountId: string | null;
             languages: string[];
         };
@@ -228,24 +263,24 @@ export declare class CaregiverController {
             scheduleItems: {
                 id: string;
                 createdAt: Date;
-                updatedAt: Date;
-                description: string | null;
                 status: import(".prisma/client").$Enums.ScheduleStatus;
-                startTime: string;
-                scheduleId: string;
+                updatedAt: Date;
                 title: string;
+                description: string | null;
+                startTime: string;
                 endTime: string;
+                scheduleId: string;
             }[];
         } & {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             status: import(".prisma/client").$Enums.ScheduleStatus;
+            updatedAt: Date;
             elderId: string;
-            careRequestId: string | null;
             day: import(".prisma/client").$Enums.DayOfWeek;
             start: string;
             end: string;
+            careRequestId: string | null;
         })[];
     }>;
     getMyRating(req: any): Promise<{
@@ -264,47 +299,47 @@ export declare class CaregiverController {
             scheduleItems: {
                 id: string;
                 createdAt: Date;
-                updatedAt: Date;
-                description: string | null;
                 status: import(".prisma/client").$Enums.ScheduleStatus;
-                startTime: string;
-                scheduleId: string;
+                updatedAt: Date;
                 title: string;
+                description: string | null;
+                startTime: string;
                 endTime: string;
+                scheduleId: string;
             }[];
         } & {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             status: import(".prisma/client").$Enums.ScheduleStatus;
+            updatedAt: Date;
             elderId: string;
-            careRequestId: string | null;
             day: import(".prisma/client").$Enums.DayOfWeek;
             start: string;
             end: string;
+            careRequestId: string | null;
         })[];
     }[]>;
     updateScheduleItem(req: any, itemId: string, data: UpdateScheduleItemDto): Promise<{
         id: string;
         createdAt: Date;
-        updatedAt: Date;
-        description: string | null;
         status: import(".prisma/client").$Enums.ScheduleStatus;
-        startTime: string;
-        scheduleId: string;
+        updatedAt: Date;
         title: string;
+        description: string | null;
+        startTime: string;
         endTime: string;
+        scheduleId: string;
     }>;
     updateScheduleItemStatus(req: any, itemId: string, status: string): Promise<{
         id: string;
         createdAt: Date;
-        updatedAt: Date;
-        description: string | null;
         status: import(".prisma/client").$Enums.ScheduleStatus;
-        startTime: string;
-        scheduleId: string;
+        updatedAt: Date;
         title: string;
+        description: string | null;
+        startTime: string;
         endTime: string;
+        scheduleId: string;
     }>;
     getElderRequests(req: any): Promise<{
         requestId: string;
@@ -437,16 +472,16 @@ export declare class CaregiversController {
     assignCaregiver(caregiverId: string, elderId: string, familyId: string): Promise<{
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         status: import(".prisma/client").$Enums.RequestStatus;
+        updatedAt: Date;
         caregiverId: string;
-        elderId: string;
         familyId: string;
         careType: import(".prisma/client").$Enums.CareType;
         careDays: import(".prisma/client").$Enums.DayOfWeek[];
         requestedAt: Date;
         respondedAt: Date | null;
         expiresAt: Date | null;
+        elderId: string;
     } | {
         success: boolean;
         message: string;

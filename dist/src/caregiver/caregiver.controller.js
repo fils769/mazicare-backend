@@ -58,6 +58,13 @@ let CaregiverController = class CaregiverController {
         const uploadResult = await this.uploadThingService.uploadFile(idPassport);
         return this.caregiverService.uploadIdPassport(req.user.userId, uploadResult.url);
     }
+    async uploadResidencePermit(req, residencePermit) {
+        if (!residencePermit) {
+            throw new common_1.BadRequestException('Residence permit file is required');
+        }
+        const uploadResult = await this.uploadThingService.uploadFile(residencePermit);
+        return this.caregiverService.uploadResidencePermit(req.user.userId, uploadResult.url);
+    }
     async uploadRecommendation(req, recommendation) {
         if (!recommendation) {
             throw new common_1.BadRequestException('Recommendation letter file is required');
@@ -71,6 +78,9 @@ let CaregiverController = class CaregiverController {
         }
         const uploadResult = await this.uploadThingService.uploadFile(certificate);
         return this.caregiverService.uploadCertificate(req.user.userId, uploadResult.url);
+    }
+    async saveAttachments(req, data) {
+        return this.caregiverService.saveAttachments(req.user.userId, data);
     }
     async getCarePrograms() {
         return this.caregiverService.getCarePrograms();
@@ -178,6 +188,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CaregiverController.prototype, "uploadIdPassport", null);
 __decorate([
+    (0, common_1.Post)('documents/residence-permit'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('residencePermit')),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], CaregiverController.prototype, "uploadResidencePermit", null);
+__decorate([
     (0, common_1.Post)('documents/recommendation'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('recommendation')),
     __param(0, (0, common_1.Request)()),
@@ -195,6 +214,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], CaregiverController.prototype, "uploadCertificate", null);
+__decorate([
+    (0, common_1.Post)('attachments'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], CaregiverController.prototype, "saveAttachments", null);
 __decorate([
     (0, common_1.Get)('programs'),
     (0, public_decorator_1.Public)(),
