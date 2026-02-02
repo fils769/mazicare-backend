@@ -57,8 +57,8 @@ export declare class AdminController {
             idPassportPhoto: string | null;
             recommendationLetter: string | null;
             certificates: {
-                createdAt: Date;
                 id: string;
+                createdAt: Date;
                 caregiverId: string;
                 url: string;
             }[];
@@ -95,17 +95,17 @@ export declare class AdminController {
         createdAt: Date;
     }[]>;
     updateElder(elderId: string, dto: AdminUpdateElderDto): Promise<{
-        createdAt: Date;
         id: string;
-        profilePicture: string | null;
+        createdAt: Date;
         updatedAt: Date;
-        familyId: string;
+        profilePicture: string | null;
         firstName: string;
         lastName: string;
         dateOfBirth: Date;
         gender: import(".prisma/client").$Enums.Gender;
-        programId: string | null;
+        familyId: string;
         description: string | null;
+        programId: string | null;
     }>;
     deleteElder(elderId: string): Promise<{
         success: boolean;
@@ -118,59 +118,59 @@ export declare class AdminController {
         status: import(".prisma/client").$Enums.AccountStatus;
     }>;
     getSubscriptionActivity(limit?: number): Promise<{
-        createdAt: Date;
         id: string;
+        createdAt: Date;
         userId: string | null;
-        actorRole: import(".prisma/client").$Enums.UserRole | null;
         category: import(".prisma/client").$Enums.ActivityCategory;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        actorRole: import(".prisma/client").$Enums.UserRole | null;
         eventType: string;
         entityType: string | null;
         entityId: string | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
     }[]>;
     getProfile(query: AdminProfileQueryDto): Promise<{
         id: string;
         familyName: string | null;
         careFor: string | null;
         user: {
-            createdAt: Date;
             id: string;
-            email: string;
+            createdAt: Date;
             status: import(".prisma/client").$Enums.AccountStatus;
+            email: string;
             subscription: ({
                 plan: {
-                    createdAt: Date;
                     id: string;
                     name: string;
                     price: number;
                     features: string[];
                     duration: string;
                     stripePriceId: string | null;
+                    createdAt: Date;
                 };
             } & {
-                createdAt: Date;
                 id: string;
-                userId: string;
-                updatedAt: Date;
+                price: number;
+                createdAt: Date;
                 status: import(".prisma/client").$Enums.SubscriptionStatus;
-                planId: string;
                 startDate: Date;
                 endDate: Date;
-                price: number;
+                updatedAt: Date;
+                userId: string;
+                planId: string;
             }) | null;
         };
         elders: {
-            createdAt: Date;
             id: string;
-            profilePicture: string | null;
+            createdAt: Date;
             updatedAt: Date;
-            familyId: string;
+            profilePicture: string | null;
             firstName: string;
             lastName: string;
             dateOfBirth: Date;
             gender: import(".prisma/client").$Enums.Gender;
-            programId: string | null;
+            familyId: string;
             description: string | null;
+            programId: string | null;
         }[];
         createdAt: Date;
         updatedAt: Date;
@@ -201,10 +201,10 @@ export declare class AdminController {
         gender: string | null;
         region: string | null;
         user: {
-            createdAt: Date;
             id: string;
-            email: string;
+            createdAt: Date;
             status: import(".prisma/client").$Enums.AccountStatus;
+            email: string;
         };
         caregiverRegion: {
             name: string;
@@ -227,8 +227,8 @@ export declare class AdminController {
             idPassportPhoto: string | null;
             recommendationLetter: string | null;
             certificates: {
-                createdAt: Date;
                 id: string;
+                createdAt: Date;
                 caregiverId: string;
                 url: string;
             }[];
