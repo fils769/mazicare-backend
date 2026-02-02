@@ -37,7 +37,7 @@ interface GatewayUser {
 @Injectable()
 @WebSocketGateway({
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'https://mazicare-webapp.vercel.app', 'https://mazicare-website.vercel.app/'],
     credentials: true,
     methods: ['GET', 'POST'],
   },
