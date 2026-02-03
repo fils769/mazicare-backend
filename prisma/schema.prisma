@@ -103,16 +103,15 @@ model Caregiver {
   documentUrl          String?
   idPassportPhoto      String?
   recommendationLetter String?
-  certificates        Certificate[]
+  certificates         Certificate[]
   residencePermit      String?
   isGreekResident      Boolean?
-  experience         Int?
-  onboardingComplete Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  stripeAccountId    String?
-  languages          String[]
-
+  experience           Int?
+  onboardingComplete   Boolean       @default(false)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  stripeAccountId      String?
+  languages            String[]
 
   user            User    @relation(fields: [userId], references: [id])
   caregiverRegion Region? @relation(fields: [regionId], references: [id])
@@ -125,12 +124,12 @@ model Caregiver {
 }
 
 model Certificate {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   url         String
   caregiverId String
   caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  
+  createdAt   DateTime  @default(now())
+
   @@index([caregiverId])
 }
 
@@ -414,17 +413,36 @@ model Subscription {
 }
 
 model SubscriptionPlan {
-  id            String   @id @default(cuid())
-  name          String   @unique
-  price         Float
-  features      String[]
-  duration      String
-  stripePriceId String?
-  createdAt     DateTime @default(now())
+  id                String             @id @default(cuid())
+  stripePriceId     String             @unique
+  name              String
+  description       String?
+  price             Float
+  currency          String             @default("EUR")
+  interval          String             @default("year") // year, month
+  role              String             @default("ALL") // ALL, FAMILY, CAREGIVER
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  subscriptions     Subscription[]
+  userSubscriptions UserSubscription[]
+}
 
-  subscriptions Subscription[]
+model UserSubscription {
+  id                   String           @id @default(cuid())
+  userId               String           @unique
+  stripeCustomerId     String           @unique
+  stripeSubscriptionId String           @unique
+  planId               String
+  plan                 SubscriptionPlan @relation(fields: [planId], references: [id])
+  status               String // active, canceled, expired, past_due
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean          @default(false)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
-  @@map("subscription_plans")
+  @@index([userId])
+  @@index([stripeCustomerId])
 }
 
 enum PaymentType {
