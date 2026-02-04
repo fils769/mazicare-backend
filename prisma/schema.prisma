@@ -2,50 +2,48 @@ generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 model DealClaim {
   id        String   @id @default(cuid())
   dealId    String
   userId    String
   createdAt DateTime @default(now())
-
-  deal Deal @relation(fields: [dealId], references: [id])
-  user User @relation(fields: [userId], references: [id])
+  deal      Deal     @relation(fields: [dealId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([dealId, userId])
   @@map("deal_claims")
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  // directUrl = env("DIRECT_URL") // Only needed for Neon/serverless
-}
-
 model User {
-  id             String        @id @default(cuid())
-  email          String        @unique
-  password       String?
-  role           UserRole
-  status         AccountStatus @default(PENDING)
-  isVerified     Boolean       @default(false)
-  phoneNumber    String?       @unique
-  phoneVerified  Boolean       @default(false)
-  profilePicture String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  otps                Otp[]
-  caregiver           Caregiver?
-  family              Family?
-  eventRegistrations  EventRegistration[]
-  sentMessages        Message[]            @relation("SentMessages")
-  receivedMessages    Message[]            @relation("ReceivedMessages")
-  notifications       Notification[]       @relation("UserNotifications")
-  subscription        Subscription?        @relation("UserSubscription")
-  reviews             Review[]             @relation("UserReviews")
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  password            String?
+  isVerified          Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  role                UserRole
+  status              AccountStatus        @default(PENDING)
+  profilePicture      String?
+  phoneNumber         String?              @unique
+  phoneVerified       Boolean              @default(false)
+  paymentOrders       PaymentOrder[]
   activityLogs        ActivityLog[]
+  caregiver           Caregiver?
   dealClaims          DealClaim[]
+  eventRegistrations  EventRegistration[]
+  family              Family?
+  receivedMessages    Message[]            @relation("ReceivedMessages")
+  sentMessages        Message[]            @relation("SentMessages")
+  notifications       Notification[]       @relation("UserNotifications")
+  otps                Otp[]
   paymentTransactions PaymentTransaction[]
+  reviews             Review[]             @relation("UserReviews")
+  subscription        Subscription?        @relation("UserSubscription")
   supportTickets      SupportTicket[]
 
   @@map("users")
@@ -54,17 +52,447 @@ model User {
 model Otp {
   id          String   @id @default(cuid())
   email       String?
-  phoneNumber String?
-  identifier  String
   otp         String
   type        OtpType
   expiresAt   DateTime
   used        Boolean  @default(false)
   createdAt   DateTime @default(now())
-
-  user User? @relation(fields: [email], references: [email])
+  identifier  String
+  phoneNumber String?
+  user        User?    @relation(fields: [email], references: [email])
 
   @@map("otps")
+}
+
+model Caregiver {
+  id                   String               @id @default(cuid())
+  userId               String               @unique
+  firstName            String?
+  lastName             String?
+  dateOfBirth          String?
+  gender               String?
+  bio                  String?
+  profilePicture       String?
+  documentUrl          String?
+  experience           Int?
+  onboardingComplete   Boolean              @default(false)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  email                String?
+  phone                String?
+  stripeAccountId      String?
+  languages            String[]
+  region               String?
+  regionId             String?
+  idPassportPhoto      String?
+  recommendationLetter String?
+  isGreekResident      Boolean?
+  residencePermit      String?
+  certificates         Certificate[]
+  careRequests         CareRequest[]
+  caregiverRegion      Region?              @relation(fields: [regionId], references: [id])
+  user                 User                 @relation(fields: [userId], references: [id])
+  paymentTransactions  PaymentTransaction[]
+  reviews              Review[]             @relation("CaregiverReviews")
+  programs             CareProgram[]        @relation("CareProgramToCaregiver")
+
+  @@map("caregivers")
+}
+
+model Certificate {
+  id          String    @id @default(cuid())
+  url         String
+  caregiverId String
+  createdAt   DateTime  @default(now())
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@index([caregiverId])
+}
+
+model CareProgram {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  description String?
+  createdAt   DateTime    @default(now())
+  elders      Elder[]
+  caregivers  Caregiver[] @relation("CareProgramToCaregiver")
+
+  @@map("care_programs")
+}
+
+model Family {
+  id                 String        @id @default(cuid())
+  userId             String        @unique
+  familyName         String?
+  careFor            String?
+  ageGroup           String?
+  region             String?
+  language           String?
+  profilePicture     String?
+  careTypes          String[]
+  schedule           String?
+  daysHours          String?
+  genderPreference   String?
+  experienceLevel    String?
+  backgroundCheck    Boolean       @default(false)
+  onboardingComplete Boolean       @default(false)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  phone              String?
+  careRequests       CareRequest[]
+  elders             Elder[]
+  user               User          @relation(fields: [userId], references: [id])
+
+  @@map("families")
+}
+
+model Region {
+  id         String      @id @default(cuid())
+  name       String      @unique
+  createdAt  DateTime    @default(now())
+  caregivers Caregiver[]
+
+  @@map("regions")
+}
+
+model Language {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("languages")
+}
+
+model Elder {
+  id             String        @id @default(cuid())
+  familyId       String
+  firstName      String
+  lastName       String
+  dateOfBirth    DateTime
+  gender         Gender
+  description    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  profilePicture String?
+  programId      String?
+  careRequests   CareRequest[]
+  family         Family        @relation(fields: [familyId], references: [id])
+  program        CareProgram?  @relation(fields: [programId], references: [id])
+  schedules      Schedule[]
+
+  @@map("elders")
+}
+
+model CareRequest {
+  id          String        @id @default(cuid())
+  elderId     String
+  caregiverId String
+  familyId    String
+  status      RequestStatus @default(PENDING)
+  requestedAt DateTime      @default(now())
+  respondedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  careDays    DayOfWeek[]
+  careType    CareType
+  expiresAt   DateTime?
+  caregiver   Caregiver     @relation(fields: [caregiverId], references: [id])
+  elder       Elder         @relation(fields: [elderId], references: [id], onDelete: Cascade)
+  family      Family        @relation(fields: [familyId], references: [id])
+  schedules   Schedule[]    @relation("CareRequestSchedules")
+
+  @@index([elderId, status])
+  @@index([elderId], map: "elderId_index")
+  @@index([caregiverId, status])
+  @@index([caregiverId])
+  @@index([familyId, status])
+  @@index([familyId])
+  @@index([status])
+  @@index([elderId, caregiverId, status])
+  @@map("care_requests")
+}
+
+model Event {
+  id              String              @id @default(cuid())
+  title           String
+  description     String?
+  date            DateTime
+  region          String?
+  category        String?
+  price           Float               @default(0)
+  maxCapacity     Int?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  categoryColor   String?
+  eventUrl        String?
+  imageHeight     Int?
+  imageSrcset     String?
+  imageUrl        String?
+  imageWidth      Int?
+  isActive        Boolean             @default(true)
+  postId          String?
+  schedule        String?
+  scrapedAt       DateTime?
+  specialFeatures String?
+  subCategories   String?
+  targetAges      String?
+  venue           String?
+  venueUrl        String?
+  registrations   EventRegistration[]
+
+  @@map("events")
+}
+
+model EventRegistration {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, eventId])
+  @@map("event_registrations")
+}
+
+model Conversation {
+  id              String    @id @default(cuid())
+  participants    String[]
+  lastMessage     String?
+  lastMessageTime DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  messages        Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  recipientId    String
+  content        String
+  createdAt      DateTime     @default(now())
+  isRead         Boolean      @default(false)
+  readAt         DateTime?
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  recipient      User         @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@map("messages")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation("UserNotifications", fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model Schedule {
+  id            String         @id @default(cuid())
+  elderId       String
+  start         String
+  end           String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  careRequestId String?
+  day           DayOfWeek
+  status        ScheduleStatus @default(ACTIVE)
+  scheduleItems ScheduleItem[]
+  careRequest   CareRequest?   @relation("CareRequestSchedules", fields: [careRequestId], references: [id], onDelete: Cascade)
+  elder         Elder          @relation(fields: [elderId], references: [id], onDelete: Cascade)
+
+  @@index([elderId])
+  @@index([careRequestId])
+  @@map("schedules")
+}
+
+model ScheduleItem {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  startTime   String
+  endTime     String
+  status      ScheduleStatus @default(PENDING)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  scheduleId  String
+  schedule    Schedule       @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, startTime], name: "schedule_start_unique")
+  @@index([scheduleId])
+  @@map("schedule_items")
+}
+
+model Subscription {
+  id           String             @id @default(cuid())
+  userId       String             @unique
+  planId       String
+  status       SubscriptionStatus @default(ACTIVE)
+  startDate    DateTime
+  endDate      DateTime
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  cancelledAt  DateTime?
+  priceExclVat Float?
+  totalAmount  Float?
+  vatAmount    Float?
+  plan         SubscriptionPlan   @relation(fields: [planId], references: [id])
+  user         User               @relation("UserSubscription", fields: [userId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model SubscriptionPlan {
+  id             String         @id @default(cuid())
+  name           String         @unique
+  features       String[]
+  createdAt      DateTime       @default(now())
+  basePrice      Float?
+  durationMonths Int?
+  role           UserRole?
+  vatRate        Float?
+  subscriptions  Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model PaymentOrder {
+  id            String        @id @default(uuid())
+  userId        String
+  planId        String
+  orderCode     BigInt        @unique
+  transactionId String?
+  amount        Int
+  currency      String        @default("EUR")
+  status        PaymentStatus @default(PENDING)
+  paymentType   PaymentType   @default(SUBSCRIPTION)
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  user          User          @relation(fields: [userId], references: [id])
+}
+
+model Deal {
+  id              String      @id @default(cuid())
+  title           String
+  description     String?
+  category        String?
+  discountPercent Float?
+  price           Float?
+  imageUrl        String?
+  region          String?
+  startsAt        DateTime?
+  endsAt          DateTime?
+  createdBy       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  redirectUrl     String?
+  claims          DealClaim[]
+
+  @@map("deals")
+}
+
+model PaymentTransaction {
+  id                      String        @id @default(cuid())
+  userId                  String?
+  caregiverId             String?
+  amount                  Float
+  currency                String        @default("usd")
+  type                    PaymentType
+  status                  PaymentStatus @default(PENDING)
+  stripePaymentIntentId   String?
+  stripeCheckoutSessionId String?
+  stripeTransferId        String?
+  metadata                Json?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  caregiver               Caregiver?    @relation(fields: [caregiverId], references: [id])
+  user                    User?         @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([caregiverId])
+  @@map("payment_transactions")
+}
+
+model ActivityLog {
+  id         String           @id @default(cuid())
+  userId     String?
+  actorRole  UserRole?
+  category   ActivityCategory
+  eventType  String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime         @default(now())
+  user       User?            @relation(fields: [userId], references: [id])
+
+  @@map("activity_logs")
+}
+
+model Review {
+  id          String    @id @default(cuid())
+  caregiverId String
+  reviewerId  String
+  rating      Int
+  comment     String?
+  createdAt   DateTime  @default(now())
+  caregiver   Caregiver @relation("CaregiverReviews", fields: [caregiverId], references: [id])
+  reviewer    User      @relation("UserReviews", fields: [reviewerId], references: [id])
+
+  @@unique([reviewerId, caregiverId])
+  @@map("reviews")
+}
+
+model SupportTicket {
+  id          String         @id @default(cuid())
+  userId      String
+  subject     String
+  description String
+  category    String?
+  priority    TicketPriority @default(MEDIUM)
+  status      TicketStatus   @default(PENDING)
+  adminNotes  String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  resolvedAt  DateTime?
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("support_tickets")
+}
+
+model Article {
+  id        String         @id @default(cuid())
+  title     String
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  blocks    ContentBlock[]
+
+  @@map("articles")
+}
+
+model ContentBlock {
+  id        String         @id @default(cuid())
+  type      String
+  order     Int
+  data      Json
+  articleId String
+  parentId  String?
+  article   Article        @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  parent    ContentBlock?  @relation("BlockChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children  ContentBlock[] @relation("BlockChildren")
+
+  @@map("content_blocks")
 }
 
 enum UserRole {
@@ -86,131 +514,6 @@ enum OtpType {
   SIGNUP
 }
 
-model Caregiver {
-  id                   String        @id @default(cuid())
-  userId               String        @unique
-  firstName            String?
-  lastName             String?
-  dateOfBirth          String?
-  gender               String?
-  region               String?
-  bio                  String?
-  profilePicture       String?
-  email                String?
-  phone                String?
-  regionId             String?
-  programs             CareProgram[]
-  documentUrl          String?
-  idPassportPhoto      String?
-  recommendationLetter String?
-  certificates         Certificate[]
-  residencePermit      String?
-  isGreekResident      Boolean?
-  experience           Int?
-  onboardingComplete   Boolean       @default(false)
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
-  stripeAccountId      String?
-  languages            String[]
-
-  user            User    @relation(fields: [userId], references: [id])
-  caregiverRegion Region? @relation(fields: [regionId], references: [id])
-
-  reviews             Review[]             @relation("CaregiverReviews")
-  paymentTransactions PaymentTransaction[]
-  careRequests        CareRequest[]
-
-  @@map("caregivers")
-}
-
-model Certificate {
-  id          String    @id @default(cuid())
-  url         String
-  caregiverId String
-  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
-
-  @@index([caregiverId])
-}
-
-model CareProgram {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-
-  caregivers Caregiver[]
-  elders     Elder[]
-
-  @@map("care_programs")
-}
-
-model Family {
-  id                 String   @id @default(cuid())
-  userId             String   @unique
-  familyName         String?
-  careFor            String?
-  ageGroup           String?
-  region             String?
-  language           String?
-  profilePicture     String?
-  phone              String?
-  careTypes          String[]
-  schedule           String?
-  daysHours          String?
-  genderPreference   String?
-  experienceLevel    String?
-  backgroundCheck    Boolean  @default(false)
-  onboardingComplete Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  user         User          @relation(fields: [userId], references: [id])
-  elders       Elder[]
-  careRequests CareRequest[]
-
-  @@map("families")
-}
-
-model Region {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  createdAt DateTime @default(now())
-
-  caregivers Caregiver[]
-
-  @@map("regions")
-}
-
-model Language {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  createdAt DateTime @default(now())
-
-  @@map("languages")
-}
-
-model Elder {
-  id             String   @id @default(cuid())
-  familyId       String
-  firstName      String
-  lastName       String
-  dateOfBirth    DateTime
-  gender         Gender
-  programId      String?
-  description    String?
-  profilePicture String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  family       Family        @relation(fields: [familyId], references: [id])
-  program      CareProgram?  @relation(fields: [programId], references: [id])
-  schedules    Schedule[]
-  careRequests CareRequest[]
-
-  @@map("elders")
-}
-
 enum CareType {
   FULL_TIME
   PART_TIME
@@ -226,39 +529,6 @@ enum DayOfWeek {
   SUNDAY
 }
 
-model CareRequest {
-  id          String @id @default(cuid())
-  elderId     String
-  caregiverId String
-  familyId    String
-
-  careType CareType
-  careDays DayOfWeek[]
-  status   RequestStatus @default(PENDING)
-
-  requestedAt DateTime  @default(now())
-  respondedAt DateTime?
-  expiresAt   DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  elder     Elder      @relation(fields: [elderId], references: [id], onDelete: Cascade)
-  caregiver Caregiver  @relation(fields: [caregiverId], references: [id])
-  family    Family     @relation(fields: [familyId], references: [id])
-  schedules Schedule[] @relation("CareRequestSchedules")
-
-  @@index([elderId, status])
-  @@index([elderId], name: "elderId_index")
-  @@index([caregiverId, status])
-  @@index([caregiverId])
-  @@index([familyId, status])
-  @@index([familyId])
-  @@index([status])
-  @@index([elderId, caregiverId, status])
-  @@map("care_requests")
-}
-
 enum RequestStatus {
   PENDING
   ACCEPTED
@@ -266,183 +536,6 @@ enum RequestStatus {
   CANCELLED
   EXPIRED
   COMPLETED
-}
-
-model Event {
-  id              String    @id @default(cuid())
-  title           String
-  description     String?
-  date            DateTime
-  region          String?
-  category        String?
-  price           Float     @default(0)
-  maxCapacity     Int?
-  schedule        String?
-  venue           String?
-  venueUrl        String?
-  categoryColor   String?
-  subCategories   String?
-  targetAges      String?
-  specialFeatures String?
-  eventUrl        String?
-  imageUrl        String?
-  imageWidth      Int?
-  imageHeight     Int?
-  imageSrcset     String?
-  postId          String?
-  scrapedAt       DateTime?
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  registrations EventRegistration[]
-
-  @@map("events")
-}
-
-model EventRegistration {
-  id        String   @id @default(cuid())
-  userId    String
-  eventId   String
-  createdAt DateTime @default(now())
-
-  user  User  @relation(fields: [userId], references: [id])
-  event Event @relation(fields: [eventId], references: [id])
-
-  @@unique([userId, eventId])
-  @@map("event_registrations")
-}
-
-model Conversation {
-  id              String    @id @default(cuid())
-  participants    String[]
-  lastMessage     String?
-  lastMessageTime DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  messages Message[]
-
-  @@map("conversations")
-}
-
-model Message {
-  id             String    @id @default(cuid())
-  conversationId String
-  senderId       String
-  recipientId    String
-  content        String
-  isRead         Boolean   @default(false)
-  readAt         DateTime?
-  createdAt      DateTime  @default(now())
-
-  conversation Conversation @relation(fields: [conversationId], references: [id])
-  sender       User         @relation("SentMessages", fields: [senderId], references: [id])
-  recipient    User         @relation("ReceivedMessages", fields: [recipientId], references: [id])
-
-  @@map("messages")
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  type      String?
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  user User @relation("UserNotifications", fields: [userId], references: [id])
-
-  @@map("notifications")
-}
-
-model Schedule {
-  id            String         @id @default(cuid())
-  elderId       String
-  careRequestId String?
-  day           DayOfWeek
-  start         String
-  end           String
-  status        ScheduleStatus @default(ACTIVE)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  elder         Elder          @relation(fields: [elderId], references: [id], onDelete: Cascade)
-  careRequest   CareRequest?   @relation("CareRequestSchedules", fields: [careRequestId], references: [id], onDelete: Cascade)
-  scheduleItems ScheduleItem[]
-
-  @@index([elderId])
-  @@index([careRequestId])
-  @@map("schedules")
-}
-
-model ScheduleItem {
-  id          String         @id @default(cuid())
-  scheduleId  String
-  title       String
-  description String?
-  startTime   String // format "HH:MM"
-  endTime     String // format "HH:MM"
-  status      ScheduleStatus @default(PENDING)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-
-  @@unique([scheduleId, startTime], name: "schedule_start_unique")
-  @@index([scheduleId])
-  @@map("schedule_items")
-}
-
-model Subscription {
-  id        String             @id @default(cuid())
-  userId    String             @unique
-  planId    String
-  status    SubscriptionStatus @default(ACTIVE)
-  startDate DateTime           @default(now())
-  endDate   DateTime
-  price     Float
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
-
-  user User             @relation("UserSubscription", fields: [userId], references: [id])
-  plan SubscriptionPlan @relation(fields: [planId], references: [id])
-
-  @@map("subscriptions")
-}
-
-model SubscriptionPlan {
-  id                String             @id @default(cuid())
-  stripePriceId     String             @unique
-  name              String
-  description       String?
-  price             Float
-  currency          String             @default("EUR")
-  interval          String             @default("year") // year, month
-  role              String             @default("ALL") // ALL, FAMILY, CAREGIVER
-  isActive          Boolean            @default(true)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  subscriptions     Subscription[]
-  userSubscriptions UserSubscription[]
-}
-
-model UserSubscription {
-  id                   String           @id @default(cuid())
-  userId               String           @unique
-  stripeCustomerId     String           @unique
-  stripeSubscriptionId String           @unique
-  planId               String
-  plan                 SubscriptionPlan @relation(fields: [planId], references: [id])
-  status               String // active, canceled, expired, past_due
-  currentPeriodEnd     DateTime
-  cancelAtPeriodEnd    Boolean          @default(false)
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
-
-  @@index([userId])
-  @@index([stripeCustomerId])
 }
 
 enum PaymentType {
@@ -457,85 +550,10 @@ enum PaymentStatus {
   REFUNDED
 }
 
-model Deal {
-  id              String    @id @default(cuid())
-  title           String
-  description     String?
-  category        String?
-  discountPercent Float?
-  price           Float?
-  imageUrl        String?
-  redirectUrl     String?
-  region          String?
-  startsAt        DateTime?
-  endsAt          DateTime?
-  createdBy       String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  claims DealClaim[]
-
-  @@map("deals")
-}
-
-model PaymentTransaction {
-  id                      String        @id @default(cuid())
-  userId                  String?
-  caregiverId             String?
-  amount                  Float
-  currency                String        @default("usd")
-  type                    PaymentType
-  status                  PaymentStatus @default(PENDING)
-  stripePaymentIntentId   String?
-  stripeCheckoutSessionId String?
-  stripeTransferId        String?
-  metadata                Json?
-  createdAt               DateTime      @default(now())
-  updatedAt               DateTime      @updatedAt
-
-  user      User?      @relation(fields: [userId], references: [id])
-  caregiver Caregiver? @relation(fields: [caregiverId], references: [id])
-
-  @@index([userId])
-  @@index([caregiverId])
-  @@map("payment_transactions")
-}
-
 enum ActivityCategory {
   USER_ACTIVITY
   FEATURE_USAGE
   SYSTEM
-}
-
-model ActivityLog {
-  id         String           @id @default(cuid())
-  userId     String?
-  actorRole  UserRole?
-  category   ActivityCategory
-  eventType  String
-  entityType String?
-  entityId   String?
-  metadata   Json?
-  createdAt  DateTime         @default(now())
-
-  user User? @relation(fields: [userId], references: [id])
-
-  @@map("activity_logs")
-}
-
-model Review {
-  id          String   @id @default(cuid())
-  caregiverId String
-  reviewerId  String
-  rating      Int
-  comment     String?
-  createdAt   DateTime @default(now())
-
-  caregiver Caregiver @relation("CaregiverReviews", fields: [caregiverId], references: [id])
-  reviewer  User      @relation("UserReviews", fields: [reviewerId], references: [id])
-
-  @@unique([reviewerId, caregiverId])
-  @@map("reviews")
 }
 
 enum Gender {
@@ -545,36 +563,16 @@ enum Gender {
 }
 
 enum ScheduleStatus {
+  PENDING
+  COMPLETED
   ACTIVE
   CANCELLED
-  COMPLETED
-  PENDING
 }
 
 enum SubscriptionStatus {
   ACTIVE
   EXPIRED
   CANCELLED
-}
-
-model SupportTicket {
-  id          String         @id @default(cuid())
-  userId      String
-  subject     String
-  description String
-  category    String?
-  priority    TicketPriority @default(MEDIUM)
-  status      TicketStatus   @default(PENDING)
-  adminNotes  String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  resolvedAt  DateTime?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([status])
-  @@map("support_tickets")
 }
 
 enum TicketStatus {
@@ -589,28 +587,4 @@ enum TicketPriority {
   MEDIUM
   HIGH
   URGENT
-}
-
-model Article {
-  id        String         @id @default(cuid())
-  title     String
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  blocks    ContentBlock[]
-
-  @@map("articles")
-}
-
-model ContentBlock {
-  id        String         @id @default(cuid())
-  type      String // 'heading', 'subheading', 'paragraph', 'image', 'list', 'layout'
-  order     Int
-  data      Json // Flexible JSON data for different block types
-  articleId String
-  article   Article        @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  parentId  String? // For layout children
-  parent    ContentBlock?  @relation("BlockChildren", fields: [parentId], references: [id], onDelete: Cascade)
-  children  ContentBlock[] @relation("BlockChildren")
-
-  @@map("content_blocks")
 }

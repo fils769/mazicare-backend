@@ -1,30 +1,71 @@
-import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Controller, Post, Get, UseGuards, NotFoundException, Req } from '@nestjs/common';
 import { SubscriptionService } from './subscription.service';
-import { RenewSubscriptionDto } from './dto/subscription.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('subscription')
 @UseGuards(JwtAuthGuard)
 export class SubscriptionController {
-  constructor(private subscriptionService: SubscriptionService) { }
-
-  @Get()
-  async getSubscription(@Request() req) {
-    return this.subscriptionService.getSubscription(req.user.userId);
-  }
-
-  @Post('renew')
-  async renewSubscription(@Request() req, @Body() renewData: RenewSubscriptionDto) {
-    return this.subscriptionService.renewSubscription(req.user.userId, renewData);
-  }
+  constructor(
+    private service: SubscriptionService,
+    private prisma: PrismaService
+  ) {}
 
   @Get('plans')
-  async getPlans() {
-    return this.subscriptionService.getPlans();
+  async getPlans(@Req() req: any) {
+    const userRole = req.user.role;
+    
+    return this.prisma.subscriptionPlan.findMany({
+      where: {
+        role: userRole, 
+      },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        basePrice: true,
+        vatRate: true,
+        durationMonths: true,
+        features: true,
+      },
+    });
+  }
+  
+
+  @Get()
+  async getSubscription(@Req() req: any) {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { userId: req.user.userId },
+      include: {
+        plan: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException('No subscription found');
+    }
+
+    return {
+      id: subscription.id,
+      planId: subscription.planId,
+      planName: subscription.plan.name,
+      status: subscription.status.toLowerCase(),
+      currentPeriodEnd: subscription.endDate.toISOString(),
+      cancelAtPeriodEnd: !!subscription.cancelledAt,
+    };
   }
 
-  @Post('cancel')
-  async cancelSubscription(@Request() req) {
-    return this.subscriptionService.cancelSubscription(req.user.userId);
+  @Post('checkout')
+  async checkout(@Req() req: any) {
+    return this.service.startSubscription(req.user.userId);
+  }
+
+  @Get('me')
+  async mySubscription(@Req() req: any) {
+    return this.service.getSubscription(req.user.userId);
   }
 }

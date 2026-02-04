@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule as NestScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -14,7 +15,6 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { ReportsModule } from './reports/reports.module';
-import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { SupportModule } from './support/support.module';
@@ -22,6 +22,8 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { ArticlesModule } from './articles/articles.module';
 import { CareRequestModule } from './care-request/care-request.module';
 import { DealsModule } from './deals/deals.module';
+import { VivaModule } from './viva/viva.module';
+import { VivaWebhookController } from './webhooks/webhook.controller';
 
 @Module({
   imports: [
@@ -29,6 +31,7 @@ import { DealsModule } from './deals/deals.module';
       isGlobal: true,
     }),
     EventEmitterModule.forRoot(),
+    NestScheduleModule.forRoot(),
     AuthModule,
     CaregiverModule,
     UserModule,
@@ -39,7 +42,6 @@ import { DealsModule } from './deals/deals.module';
     NotificationsModule,
     ScheduleModule,
     SubscriptionModule,
-    PaymentsModule,
     AdminModule,
     ReportsModule,
     AnalyticsModule,
@@ -48,8 +50,9 @@ import { DealsModule } from './deals/deals.module';
     ArticlesModule,
     CareRequestModule,
     DealsModule,
+    VivaModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, VivaWebhookController],
   providers: [AppService],
 })
 export class AppModule { }

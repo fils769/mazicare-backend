@@ -106,7 +106,6 @@ export class AdminService {
                 status: subscription.status,
                 startDate: subscription.startDate,
                 endDate: subscription.endDate,
-                price: subscription.price,
                 progressPercent: progress,
                 daysRemaining,
               }

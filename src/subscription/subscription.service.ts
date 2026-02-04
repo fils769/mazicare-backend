@@ -1,103 +1,37 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { RenewSubscriptionDto } from './dto/subscription.dto';
+import { VivaService } from '../viva/viva.service';
 
 @Injectable()
 export class SubscriptionService {
   constructor(
     private prisma: PrismaService,
-    private eventEmitter: EventEmitter2,
-  ) { }
+    private viva: VivaService,
+  ) {}
 
-  async getSubscription(userId: string) {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { userId },
-      include: {
-        plan: true
-      }
+  async startSubscription(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
     });
 
-    if (!subscription) {
-      return null;
+    if (!user) {
+      throw new Error('User not found');
     }
 
-    return {
-      ...subscription,
-      planName: subscription.plan.name
-    };
-  }
-
-  async renewSubscription(userId: string, renewData: RenewSubscriptionDto) {
-    const plan = await this.prisma.subscriptionPlan.findUnique({
-      where: { id: renewData.planId }
+    const plan = await this.prisma.subscriptionPlan.findFirst({
+      where: { role: user.role },
     });
 
     if (!plan) {
-      throw new NotFoundException('Subscription plan not found');
+      throw new Error('Subscription plan not found');
     }
-
-    const endDate = new Date();
-    // Add 1 year for yearly subscription
-    endDate.setFullYear(endDate.getFullYear() + 1);
-
-    const subscription = await this.prisma.subscription.upsert({
-      where: { userId },
-      update: {
-        planId: renewData.planId,
-        endDate,
-        price: plan.price,
-        status: 'ACTIVE'
-      },
-      create: {
-        userId,
-        planId: renewData.planId,
-        endDate,
-        price: plan.price,
-        status: 'ACTIVE'
-      }
-    });
-
-    // Emit event for notification
-    this.eventEmitter.emit('subscription.renewed', {
-      userId,
-      planName: plan.name,
-      subscription,
-    });
-
-    return {
-      success: true,
-      subscription,
-      message: 'Subscription renewed successfully'
-    };
+    return this.viva.createOrder(userId, plan.id);
   }
 
-  async getPlans() {
-    return this.prisma.subscriptionPlan.findMany({
-      orderBy: { price: 'asc' }
-    });
-  }
-
-  async cancelSubscription(userId: string) {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { userId }
-    });
-
-    if (!subscription) {
-      throw new NotFoundException('No active subscription found');
-    }
-
-    const updatedSubscription = await this.prisma.subscription.update({
+  async getSubscription(userId: string) {
+    return this.prisma.subscription.findUnique({
       where: { userId },
-      data: {
-        status: 'CANCELLED'
-      }
+      include: { plan: true },
     });
-
-    return {
-      success: true,
-      subscription: updatedSubscription,
-      message: 'Subscription cancelled successfully'
-    };
   }
 }

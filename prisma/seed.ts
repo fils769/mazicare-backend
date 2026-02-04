@@ -6,29 +6,29 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Create subscription plan
-  const premiumPlan = await prisma.subscriptionPlan.upsert({
-    where: { name: 'Premium Plan' },
-    update: {
-      price: 50.00,
-      duration: '1 year',
-      stripePriceId: process.env.STRIPE_PRICE_ID || null
-    },
-    create: {
-      name: 'Premium Plan',
-      price: 50.00,
-      features: [
-        'Advanced caregiver matching',
-        'Priority 24/7 support',
-        'Health monitoring & tracking',
-        'Unlimited messaging',
-        'Video consultations',
-        'Detailed care reports',
-        'Emergency response system'
-      ],
-      duration: '1 year',
-      stripePriceId: process.env.STRIPE_PRICE_ID || null
-    }
-  });
+  // const premiumPlan = await prisma.subscriptionPlan.upsert({
+  //   where: { name: 'Premium Plan' },
+  //   update: {
+  //     price: 50.00,
+  //     duration: '1 year',
+  //     stripePriceId: process.env.STRIPE_PRICE_ID || null
+  //   },
+  //   create: {
+  //     name: 'Premium Plan',
+  //     price: 50.00,
+  //     features: [
+  //       'Advanced caregiver matching',
+  //       'Priority 24/7 support',
+  //       'Health monitoring & tracking',
+  //       'Unlimited messaging',
+  //       'Video consultations',
+  //       'Detailed care reports',
+  //       'Emergency response system'
+  //     ],
+  //     duration: '1 year',
+  //     stripePriceId: process.env.STRIPE_PRICE_ID || null
+  //   }
+  // });
 
   // Create regions
   const regions = [
@@ -259,25 +259,25 @@ async function main() {
   }
 
   // Create subscriptions
-  for (let i = 0; i < createdFamilies.length; i++) {
-    const endDate = new Date();
-    endDate.setFullYear(endDate.getFullYear() + 1); // Add 1 year
+  // for (let i = 0; i < createdFamilies.length; i++) {
+  //   const endDate = new Date();
+  //   endDate.setFullYear(endDate.getFullYear() + 1); // Add 1 year
 
-    await prisma.subscription.upsert({
-      where: { userId: createdFamilies[i].user.id },
-      update: {
-        planId: premiumPlan.id,
-        endDate,
-        price: premiumPlan.price
-      },
-      create: {
-        userId: createdFamilies[i].user.id,
-        planId: premiumPlan.id,
-        endDate,
-        price: premiumPlan.price
-      }
-    });
-  }
+  //   await prisma.subscription.upsert({
+  //     where: { userId: createdFamilies[i].user.id },
+  //     update: {
+  //       planId: premiumPlan.id,
+  //       endDate,
+  //       price: premiumPlan.price
+  //     },
+  //     create: {
+  //       userId: createdFamilies[i].user.id,
+  //       planId: premiumPlan.id,
+  //       endDate,
+  //       price: premiumPlan.price
+  //     }
+  //   });
+  // }
 
   // Create notifications
   const notifications = [
